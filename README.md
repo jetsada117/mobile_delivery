@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # mobile_delivery
 
 A new Flutter project.
@@ -14,3 +15,6 @@ A few resources to get you started if this is your first Flutter project:
 For help getting started with Flutter development, view the
 [online documentation](https://docs.flutter.dev/), which offers tutorials,
 samples, guidance on mobile development, and a full API reference.
+=======
+# mobile_delivery
+>>>>>>> 48b6c21f9061c973b738b1f35694fe690cbcec57
