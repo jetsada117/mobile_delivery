@@ -1,0 +1,5 @@
+flutter pub add get
+flutter pub add google_fonts
+flutter pub add flex_color_scheme
+flutter pub add provider
+flutter pub add image_picker
