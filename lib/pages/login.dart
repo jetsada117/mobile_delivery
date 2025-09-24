@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:get/get_core/src/get_main.dart';
 import 'package:mobile_delivery/pages/chooserole.dart';
 
 class LoginPage extends StatefulWidget {
