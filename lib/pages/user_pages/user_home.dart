@@ -14,9 +14,12 @@ class _UserHomePageState extends State<UserHomePage> {
 
   // ตัวอย่างข้อมูลสินค้า
   final _items = const [
-    _Product(name: 'ปลากระป๋อง', imageUrl: 'https://picsum.photos/seed/can/200'),
-    _Product(name: 'มาม่า',        imageUrl: 'https://picsum.photos/seed/noodle/200'),
-    _Product(name: 'ไข่ไก่',       imageUrl: 'https://picsum.photos/seed/egg/200'),
+    _Product(
+      name: 'ปลากระป๋อง',
+      imageUrl: 'https://picsum.photos/seed/can/200',
+    ),
+    _Product(name: 'มาม่า', imageUrl: 'https://picsum.photos/seed/noodle/200'),
+    _Product(name: 'ไข่ไก่', imageUrl: 'https://picsum.photos/seed/egg/200'),
   ];
 
   @override
@@ -40,7 +43,6 @@ class _UserHomePageState extends State<UserHomePage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // แถว Avatar + ทักทาย
               Row(
                 children: [
                   CircleAvatar(
@@ -60,7 +62,10 @@ class _UserHomePageState extends State<UserHomePage> {
                   const SizedBox(width: 12),
                   Text(
                     'สวัสดี, ${widget.username}',
-                    style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w700),
+                    style: const TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ],
               ),
@@ -75,7 +80,10 @@ class _UserHomePageState extends State<UserHomePage> {
                   filled: true,
                   fillColor: Colors.white,
                   isDense: true,
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 12,
+                  ),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10),
                     borderSide: const BorderSide(color: borderCol),
@@ -101,11 +109,15 @@ class _UserHomePageState extends State<UserHomePage> {
                   SizedBox(
                     height: 36,
                     child: ElevatedButton(
-                      onPressed: () { /* TODO: ไปหน้าสร้างสินค้า */ },
+                      onPressed: () {
+                        /* TODO: ไปหน้าสร้างสินค้า */
+                      },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.black,
                         foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
                         elevation: 0,
                       ),
                       child: const Text('สร้างสินค้า'),
@@ -127,10 +139,22 @@ class _UserHomePageState extends State<UserHomePage> {
         backgroundColor: cardBg,
         onTap: (i) => setState(() => _navIndex = i),
         items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home_outlined), label: 'หน้าหลัก'),
-          BottomNavigationBarItem(icon: Icon(Icons.local_shipping_outlined), label: 'สินค้าที่ส่ง'),
-          BottomNavigationBarItem(icon: Icon(Icons.inbox_outlined), label: 'สินค้าที่ได้รับ'),
-          BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: 'โปรไฟล์'),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home_outlined),
+            label: 'หน้าหลัก',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.local_shipping_outlined),
+            label: 'สินค้าที่ส่ง',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.inbox_outlined),
+            label: 'สินค้าที่ได้รับ',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person_outline),
+            label: 'โปรไฟล์',
+          ),
         ],
       ),
     );
@@ -158,7 +182,8 @@ class _ProductCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         // border: const BorderSide(color: borderCol).toPaint(),
       ),
-      child: Container( // ใช้ Container ซ้อนเพื่อให้ Border ดูชัด
+      child: Container(
+        // ใช้ Container ซ้อนเพื่อให้ Border ดูชัด
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: borderCol),
@@ -174,7 +199,9 @@ class _ProductCard extends StatelessWidget {
                 height: 64,
                 fit: BoxFit.cover,
                 errorBuilder: (c, e, s) => Container(
-                  width: 64, height: 64, color: Colors.white,
+                  width: 64,
+                  height: 64,
+                  color: Colors.white,
                   child: const Icon(Icons.inventory_2, size: 32),
                 ),
               ),
@@ -183,7 +210,10 @@ class _ProductCard extends StatelessWidget {
             Expanded(
               child: Text(
                 product.name,
-                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ),
           ],

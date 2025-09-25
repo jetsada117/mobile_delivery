@@ -7,6 +7,8 @@ import 'package:image_picker/image_picker.dart';
 import 'package:mobile_delivery/pages/login.dart';
 import 'dart:io';
 
+import 'package:supabase_flutter/supabase_flutter.dart';
+
 class RiderRegister extends StatefulWidget {
   const RiderRegister({super.key});
 
@@ -24,9 +26,14 @@ class _RiderRegisterState extends State<RiderRegister> {
 
   bool _obscure1 = true;
   bool _obscure2 = true;
-  XFile? _selectedImage;
 
   var db = FirebaseFirestore.instance;
+  final supa = Supabase.instance.client;
+
+  XFile? _riderImg; // ⬅️ รูปโปรไฟล์ไรเดอร์
+  XFile? _vehicleImg; // ⬅️ รูปยานพาหนะ
+  String? _riderFileName;
+  String? _vehicleFileName;
 
   @override
   void dispose() {
@@ -162,20 +169,34 @@ class _RiderRegisterState extends State<RiderRegister> {
                         _input(controller: _plate, hint: 'ทะเบียนรถ'),
                         const SizedBox(height: 12),
 
-                        // ปุ่มอัปโหลดรูปโปรไฟล์
+                        // รูปโปรไฟล์ไรเดอร์
                         _uploadRow(
-                          caption: 'อัปโหลดรูปโปรไฟล์',
-                          onPick: () {
-                            // TODO: เลือกรูปโปรไฟล์
+                          label: _riderFileName ?? 'อัปโหลดรูปโปรไฟล์',
+                          onPick: () async {
+                            final XFile? img = await _openImagePopup(context);
+                            if (img != null) {
+                              setState(() {
+                                _riderImg = img;
+                                _riderFileName =
+                                    img.name; // ⬅️ ใช้ชื่อไฟล์ที่เลือก
+                              });
+                            }
                           },
                         ),
                         const SizedBox(height: 8),
 
-                        // ปุ่มอัปโหลดรูปยานพาหนะ
+                        // รูปยานพาหนะ
                         _uploadRow(
-                          caption: 'อัปโหลดรูปยานพาหนะ',
-                          onPick: () {
-                            // TODO: เลือกรูปรถ
+                          label: _vehicleFileName ?? 'อัปโหลดรูปยานพาหนะ',
+                          onPick: () async {
+                            final XFile? img = await _openImagePopup(context);
+                            if (img != null) {
+                              setState(() {
+                                _vehicleImg = img;
+                                _vehicleFileName =
+                                    img.name; // ⬅️ ใช้ชื่อไฟล์ที่เลือก
+                              });
+                            }
                           },
                         ),
                         const SizedBox(height: 14),
@@ -264,7 +285,10 @@ class _RiderRegisterState extends State<RiderRegister> {
     );
   }
 
-  Widget _uploadRow({required String caption, required VoidCallback onPick}) {
+  Widget _uploadRow({
+    required String label,
+    required Future<void> Function() onPick,
+  }) {
     return Row(
       children: [
         Expanded(
@@ -280,27 +304,16 @@ class _RiderRegisterState extends State<RiderRegister> {
                   borderRadius: BorderRadius.circular(10),
                 ),
               ),
-              child: Text(caption),
+              child: Text(label, overflow: TextOverflow.ellipsis),
             ),
           ),
         ),
         const SizedBox(width: 10),
-        // ปุ่มขวา (ดำ เล็ก)
         SizedBox(
           width: 72,
           height: 40,
           child: ElevatedButton(
-            onPressed: () async {
-                                  final XFile? img = await _openImagePopup(
-                                    context,
-                                  );
-                                  if (img != null) {
-                                    setState(() => _selectedImage = img);
-                                    log('Picked: ${img.path}');
-                                  } else {
-                                    log('No Image');
-                                  }
-                                },
+            onPressed: onPick,
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.black,
               foregroundColor: Colors.white,
@@ -316,79 +329,102 @@ class _RiderRegisterState extends State<RiderRegister> {
     );
   }
 
+  Future<String> _uploadToSupabase({
+    required String riderId,
+    required XFile file,
+    required String filename, // 'profile.jpg' หรือ 'vehicle.jpg'
+  }) async {
+    final path = 'riders/$riderId/$filename';
+    final bytes = await file.readAsBytes();
+
+    await supa.storage
+        .from('riders')
+        .uploadBinary(
+          path,
+          bytes,
+          fileOptions: const FileOptions(
+            contentType: 'image/jpeg',
+            upsert: true,
+          ),
+        );
+
+    // ถ้า bucket เป็น public read:
+    return supa.storage.from('riders').getPublicUrl(path);
+
+    // ถ้า bucket เป็น private ใช้แบบนี้แทน:
+    // final signed = await supa.storage.from('riders').createSignedUrl(path, 3600);
+    // return signed;
+  }
+
   Future<void> addData() async {
+    // validate ฟิลด์ข้อความ
     if (_username.text.isEmpty ||
         _phone.text.isEmpty ||
         _password.text.isEmpty ||
         _confirm.text.isEmpty ||
         _plate.text.isEmpty) {
-      showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: Text("กรอกข้อมูลไม่ครบ"),
-          content: Text("กรุณากรอกข้อมูลทุกช่องให้ครบถ้วน"),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text("ตกลง"),
-            ),
-          ],
-        ),
-      );
-      return;
+      return _show('กรอกข้อมูลไม่ครบ', 'กรุณากรอกข้อมูลทุกช่องให้ครบถ้วน');
     }
-
     if (_password.text != _confirm.text) {
-      showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: Text("รหัสผ่านไม่ตรงกัน"),
-          content: Text("กรุณากรอกรหัสผ่านให้ตรงกัน"),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text("ตกลง"),
-            ),
-          ],
-        ),
-      );
-      return;
+      return _show('รหัสผ่านไม่ตรงกัน', 'กรุณากรอกรหัสผ่านให้ตรงกัน');
+    }
+    // ต้องมีรูปทั้งสอง
+    if (_riderImg == null || _vehicleImg == null) {
+      return _show('ต้องอัปโหลดรูป', 'กรุณาเลือกรูปโปรไฟล์และรูปยานพาหนะ');
     }
 
-    final collection = FirebaseFirestore.instance.collection('rider');
-    final snapshot = await collection.count().get();
-    int newId = snapshot.count! + 1;
+    try {
+      // ❗ ถ้าทำจริงแนะนำใช้ doc().id ไม่ใช้ count()+1
+      final collection = FirebaseFirestore.instance.collection('riders');
+      final snapshot = await collection.count().get();
+      final riderId = (snapshot.count! + 1).toString();
 
-    var data = {
-      'name': _username.text,
-      'phone': _phone.text,
-      'password': _password.text,
-      'plate_no': _plate.text,
-      'lat': "",
-      'lng': "",
-      'vihicle_image': "",
-      'rider_image': "",
-    };
+      final riderUrl = await _uploadToSupabase(
+        riderId: riderId,
+        file: _riderImg!,
+        filename: 'profile.jpg',
+      );
+      final vehicleUrl = await _uploadToSupabase(
+        riderId: riderId,
+        file: _vehicleImg!,
+        filename: 'vehicle.jpg',
+      );
 
-    log(data.toString());
-    db.collection('rider').doc(newId.toString()).set(data);
+      final data = {
+        'name': _username.text.trim(),
+        'phone': _phone.text.trim(),
+        'password': _password.text.trim(), // โปรดเปลี่ยนเป็น hash ใน production
+        'plate_no': _plate.text.trim(),
+        'lat': null,
+        'lng': null,
+        'vehicle_image': vehicleUrl, // ✅ เก็บ URL
+        'rider_image': riderUrl, // ✅ เก็บ URL
+      };
 
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text("สำเร็จ"),
-        content: Text("เพิ่มข้อมูล Rider เรียบร้อยแล้ว"),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Get.to(() => LoginPage());
-            },
-            child: Text("ตกลง"),
-          ),
-        ],
-      ),
-    );
+      await db.collection('riders').doc(riderId).set(data);
+
+      await _show('สำเร็จ', 'เพิ่มข้อมูล Rider เรียบร้อยแล้ว');
+      if (mounted) Get.to(() => const LoginPage());
+    } catch (e, st) {
+      log('add rider error: $e\n$st');
+      _show('ผิดพลาด', e.toString());
+    }
   }
+
+  Future<void> _show(String t, String m) => showDialog(
+    context: context,
+    builder: (_) => AlertDialog(
+      title: Text(t),
+      content: Text(m),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('ตกลง'),
+        ),
+      ],
+    ),
+  );
+
   Future<XFile?> _openImagePopup(BuildContext context) async {
     XFile? picked;
 

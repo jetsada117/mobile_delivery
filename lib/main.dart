@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:get/route_manager.dart';
 import 'package:mobile_delivery/firebase_options.dart';
 import 'package:mobile_delivery/pages/login.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -12,6 +13,13 @@ void main() async {
   FirebaseFirestore.instance.settings = const Settings(
     persistenceEnabled: true,
   );
+
+  Supabase.initialize(
+    url: 'https://irabwqxlzjcicgqxoike.supabase.co',
+    anonKey:
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlyYWJ3cXhsempjaWNncXhvaWtlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg4MTI5NTgsImV4cCI6MjA3NDM4ODk1OH0.J0Xi0-rHH9E4AkRcVD071axQQtrFw3-bJ2Vo4zb6_-s',
+  );
+
   runApp(const MyApp());
 }
 

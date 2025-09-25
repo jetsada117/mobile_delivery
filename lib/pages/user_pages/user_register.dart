@@ -10,6 +10,8 @@ import 'package:mobile_delivery/pages/login.dart';
 import 'package:geolocator/geolocator.dart';
 import 'dart:io';
 
+import 'package:supabase_flutter/supabase_flutter.dart';
+
 class UserRegister extends StatefulWidget {
   const UserRegister({super.key});
 
@@ -25,14 +27,18 @@ class _UserRegisterState extends State<UserRegister> {
   final _address = TextEditingController();
   final ImagePicker _picker = ImagePicker();
   var db = FirebaseFirestore.instance;
+  final supa = Supabase.instance.client;
 
   bool _obscure1 = true;
   bool _obscure2 = true;
 
   var mapController = MapController();
+
   var position;
   final double _zoom = 15.2;
+
   LatLng? _center;
+  XFile? _avatar;
 
   @override
   void initState() {
@@ -253,6 +259,7 @@ class _UserRegisterState extends State<UserRegister> {
                                     context,
                                   );
                                   if (img != null) {
+                                    setState(() => _avatar = img);
                                     log('Picked: ${img.path}');
                                   } else {
                                     log('No Image');
@@ -381,8 +388,7 @@ class _UserRegisterState extends State<UserRegister> {
       builder: (ctx) {
         return StatefulBuilder(
           builder: (ctx, setLocal) {
-            final double preview =
-                MediaQuery.of(ctx).size.width * 0.5; // ขนาดรูปในป็อปอัพ
+            final double preview = MediaQuery.of(ctx).size.width * 0.5;
 
             return Dialog(
               shape: RoundedRectangleBorder(
@@ -434,7 +440,6 @@ class _UserRegisterState extends State<UserRegister> {
 
                     const SizedBox(height: 14),
 
-                    // แถว: อัปโหลดรูปโปรไฟล์ | เลือกรูป
                     Row(
                       children: [
                         Expanded(
@@ -526,84 +531,102 @@ class _UserRegisterState extends State<UserRegister> {
     );
   }
 
+  Future<String> _uploadAvatarToSupabase({
+    required String userId,
+    required XFile file,
+  }) async {
+    final bytes = await file.readAsBytes();
+    final path = 'users/$userId/profile.jpg';
+
+    await supa.storage
+        .from('users')
+        .uploadBinary(
+          path,
+          bytes,
+          fileOptions: const FileOptions(
+            contentType: 'image/jpeg',
+            upsert: true,
+          ),
+        );
+
+    final url = supa.storage.from('users').getPublicUrl(path);
+    return url;
+  }
+
   Future<void> addData() async {
+    // validate ฟิลด์
     if (_username.text.isEmpty ||
         _phone.text.isEmpty ||
         _password.text.isEmpty ||
         _confirm.text.isEmpty ||
         _address.text.isEmpty) {
-      showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: Text("กรอกข้อมูลไม่ครบ"),
-          content: Text("กรุณากรอกข้อมูลทุกช่องให้ครบถ้วน"),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text("ตกลง"),
-            ),
-          ],
-        ),
-      );
-      return;
+      return _alert("กรอกข้อมูลไม่ครบ", "กรุณากรอกข้อมูลทุกช่องให้ครบถ้วน");
     }
-
     if (_password.text != _confirm.text) {
-      showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: Text("รหัสผ่านไม่ตรงกัน"),
-          content: Text("กรุณากรอกรหัสผ่านให้ตรงกัน"),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text("ตกลง"),
-            ),
-          ],
-        ),
-      );
-      return;
+      return _alert("รหัสผ่านไม่ตรงกัน", "กรุณากรอกรหัสผ่านให้ตรงกัน");
+    }
+    if (_avatar == null) {
+      return _alert("ต้องอัปโหลดรูป", "กรุณาเลือกรูปโปรไฟล์ก่อนลงทะเบียน");
     }
 
-    final collection = FirebaseFirestore.instance.collection('user');
-    final snapshot = await collection.count().get();
-    int userId = snapshot.count! + 1;
+    try {
+      // ---------- สร้าง userId ----------
+      // (ทางที่ดี: ให้ Firestore gen id เอง)
+      // final userRef = await db.collection('users').add({...});
+      // final userId = userRef.id;
 
-    var data = {
-      'name': _username.text,
-      'phone': _phone.text,
-      'password': _password.text,
-      'user_image': "",
-    };
+      // แต่ถ้าจะใช้ count()+1 ตามโค้ดเดิม:
+      final col = db.collection('users'); // 👈 ใช้ 'users'
+      final snapshot = await col.count().get();
+      final userId = (snapshot.count! + 1).toString();
+      final userRef = col.doc(userId);
 
-    var address = {
-      'address': _address.text,
-      'lat': _center?.latitude,
-      'lng': _center?.longitude,
-    };
+      // ---------- อัปโหลดรูปไป Supabase ----------
+      final photoUrl = await _uploadAvatarToSupabase(
+        userId: userId,
+        file: _avatar!, // มั่นใจว่าไม่ null เพราะ validate แล้ว
+      );
 
-    await db.collection('user').doc(userId.toString()).set(data);
+      // ---------- บันทึก user + url ----------
+      final userData = {
+        'name': _username.text.trim(),
+        'phone': _phone.text.trim(),
+        'password': _password.text.trim(), // โปรดเปลี่ยนเป็น hash ในงานจริง
+        'user_image': photoUrl, // 👈 URL จาก Supabase
+        'created_at': FieldValue.serverTimestamp(),
+      };
+      await userRef.set(userData);
 
-    await db
-        .collection('user')
-        .doc(userId.toString())
-        .collection('address')
-        .add(address);
+      // ---------- บันทึก address เป็น sub-collection ----------
+      final addrData = {
+        'address': _address.text.trim(),
+        'lat': _center?.latitude,
+        'lng': _center?.longitude,
+        'created_at': FieldValue.serverTimestamp(),
+      };
+      await userRef.collection('addresses').add(addrData); // 👈 ใช้ 'addresses'
 
-    log("User: $data");
-    log("Address: $address");
+      log("User: $userData");
+      log("Address: $addrData");
 
-    showDialog(
+      await _alert("สำเร็จ", "สมัครสมาชิกเรียบร้อยแล้ว");
+      if (mounted) Get.to(() => const LoginPage());
+    } catch (e, st) {
+      log('addData error: $e\n$st');
+      _alert("ผิดพลาด", e.toString());
+    }
+  }
+
+  Future<void> _alert(String t, String m) {
+    return showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text("สำเร็จ"),
-        content: Text("เพิ่มข้อมูล User เรียบร้อยแล้ว"),
+      builder: (_) => AlertDialog(
+        title: Text(t),
+        content: Text(m),
         actions: [
           TextButton(
-            onPressed: () {
-              Get.to(() => LoginPage());
-            },
-            child: Text("ตกลง"),
+            onPressed: () => Navigator.pop(context),
+            child: const Text("ตกลง"),
           ),
         ],
       ),

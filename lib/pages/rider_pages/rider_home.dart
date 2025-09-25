@@ -222,7 +222,7 @@ class _OrderItem {
 }
 
 class _OrderCard extends StatelessWidget {
-  const _OrderCard({super.key, required this.item, this.onTap});
+  const _OrderCard({required this.item, this.onTap});
   final _OrderItem item;
   final VoidCallback? onTap;
 
