@@ -388,136 +388,158 @@ class _UserRegisterState extends State<UserRegister> {
   }
 
   Future<XFile?> _openImagePopup(BuildContext context) async {
-  XFile? picked;
+    XFile? picked;
 
-  return showDialog<XFile?>(
-    context: context,
-    barrierDismissible: false,
-    builder: (ctx) {
-      return StatefulBuilder(
-        builder: (ctx, setLocal) {
-          final double preview = MediaQuery.of(ctx).size.width * 0.5; // ขนาดรูปในป็อปอัพ
+    return showDialog<XFile?>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (ctx, setLocal) {
+            final double preview =
+                MediaQuery.of(ctx).size.width * 0.5; // ขนาดรูปในป็อปอัพ
 
-          return Dialog(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            backgroundColor: const Color(0xFFC9A9F5),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // พรีวิวรูป (แทนไอคอนกล้อง)
-                  Container(
-                    width: preview,
-                    height: preview,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    clipBehavior: Clip.hardEdge,
-                    child: picked == null
-                        ? Icon(Icons.camera_alt, size: preview * 0.45)
-                        : Image.file(File(picked!.path), fit: BoxFit.cover),
-                  ),
-                  const SizedBox(height: 8),
-
-                  // ปุ่มเปิดกล้อง
-                  ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.black87,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                      elevation: 0,
-                    ),
-                    onPressed: () async {
-                      final x = await _picker.pickImage(source: ImageSource.camera);
-                      if (x != null) setLocal(() => picked = x);
-                    },
-                    child: const Text('เปิดกล้อง'),
-                  ),
-
-                  const SizedBox(height: 14),
-
-                  // แถว: อัปโหลดรูปโปรไฟล์ | เลือกรูป
-                  Row(
-                    children: [
-                      Expanded(
-                        child: ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFFC9A9F5),
-                            foregroundColor: Colors.black87,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                            elevation: 0,
-                          ),
-                          onPressed: () async {
-                            final x = await _picker.pickImage(source: ImageSource.gallery);
-                            if (x != null) setLocal(() => picked = x);
-                          },
-                          child: const Text('อัปโหลดรูปโปรไฟล์'),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      SizedBox(
-                        width: 90,
-                        child: ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.black87,
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                            elevation: 0,
-                          ),
-                          onPressed: () async {
-                            final x = await _picker.pickImage(source: ImageSource.gallery);
-                            if (x != null) setLocal(() => picked = x);
-                          },
-                          child: const Text('เลือกรูป'),
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 14),
-
-                  // แถว: ยกเลิก | ตกลง
-                  Row(
-                    children: [
-                      Expanded(
-                        child: ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.black87,
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                            elevation: 0,
-                          ),
-                          onPressed: () => Navigator.pop(ctx, null),
-                          child: const Text('ยกเลิก'),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.black87,
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                            elevation: 0,
-                          ),
-                          onPressed: () => Navigator.pop(ctx, picked),
-                          child: const Text('ตกลง'),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
+            return Dialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
               ),
-            ),
-          );
-        },
-      );
-    },
-  );
-}
+              backgroundColor: const Color(0xFFC9A9F5),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // พรีวิวรูป (แทนไอคอนกล้อง)
+                    Container(
+                      width: preview,
+                      height: preview,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      clipBehavior: Clip.hardEdge,
+                      child: picked == null
+                          ? Icon(Icons.camera_alt, size: preview * 0.45)
+                          : Image.file(File(picked!.path), fit: BoxFit.cover),
+                    ),
+                    const SizedBox(height: 8),
+
+                    // ปุ่มเปิดกล้อง
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.black87,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        elevation: 0,
+                      ),
+                      onPressed: () async {
+                        final x = await _picker.pickImage(
+                          source: ImageSource.camera,
+                        );
+                        if (x != null) setLocal(() => picked = x);
+                      },
+                      child: const Text('เปิดกล้อง'),
+                    ),
+
+                    const SizedBox(height: 14),
+
+                    // แถว: อัปโหลดรูปโปรไฟล์ | เลือกรูป
+                    Row(
+                      children: [
+                        Expanded(
+                          child: ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFFC9A9F5),
+                              foregroundColor: Colors.black87,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              elevation: 0,
+                            ),
+                            onPressed: () async {
+                              final x = await _picker.pickImage(
+                                source: ImageSource.gallery,
+                              );
+                              if (x != null) setLocal(() => picked = x);
+                            },
+                            child: const Text('อัปโหลดรูปโปรไฟล์'),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        SizedBox(
+                          width: 90,
+                          child: ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.black87,
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              elevation: 0,
+                            ),
+                            onPressed: () async {
+                              final x = await _picker.pickImage(
+                                source: ImageSource.gallery,
+                              );
+                              if (x != null) setLocal(() => picked = x);
+                            },
+                            child: const Text('เลือกรูป'),
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 14),
+
+                    // แถว: ยกเลิก | ตกลง
+                    Row(
+                      children: [
+                        Expanded(
+                          child: ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.black87,
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              elevation: 0,
+                            ),
+                            onPressed: () => Navigator.pop(ctx, null),
+                            child: const Text('ยกเลิก'),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.black87,
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              elevation: 0,
+                            ),
+                            onPressed: () => Navigator.pop(ctx, picked),
+                            child: const Text('ตกลง'),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
 
   /// Determine the current position of the device.
   ///
