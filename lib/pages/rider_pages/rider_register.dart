@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:mobile_delivery/pages/login.dart';
 
 class RiderRegister extends StatefulWidget {
   const RiderRegister({super.key});
@@ -175,7 +177,7 @@ class _RiderRegisterState extends State<RiderRegister> {
                           height: 44,
                           child: ElevatedButton(
                             onPressed: () {
-                              // TODO: submit
+                              Get.to(() => const LoginPage());
                             },
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.black,
@@ -184,7 +186,7 @@ class _RiderRegisterState extends State<RiderRegister> {
                                 borderRadius: BorderRadius.circular(10),
                               ),
                             ),
-                            child: const Text('Submit'),
+                            child: const Text('ส่ง'),
                           ),
                         ),
                         const SizedBox(height: 6),
@@ -192,10 +194,10 @@ class _RiderRegisterState extends State<RiderRegister> {
                         Center(
                           child: TextButton(
                             onPressed: () {
-                              // TODO: ไปหน้า Sign in
+                              Get.to(() => const LoginPage());
                             },
                             child: const Text(
-                              'Sign in',
+                              'ยกเลิก',
                               style: TextStyle(
                                 color: linkBlue,
                                 fontWeight: FontWeight.w500,

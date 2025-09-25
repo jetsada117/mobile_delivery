@@ -90,7 +90,7 @@ class _LoginPageState extends State<LoginPage> {
                             controller: _phoneCtrl,
                             keyboardType: TextInputType.phone,
                             decoration: InputDecoration(
-                              hintText: 'Username',
+                              hintText: 'เบอร์โทรศัพท์',
                               isDense: true,
                               contentPadding: const EdgeInsets.symmetric(
                                 horizontal: 14,
@@ -105,7 +105,7 @@ class _LoginPageState extends State<LoginPage> {
                           ),
                           const SizedBox(height: 14),
                           const Text(
-                            'Password',
+                            'รหัสผ่าน',
                             style: TextStyle(
                               fontSize: 13,
                               color: Colors.black87,
@@ -116,7 +116,7 @@ class _LoginPageState extends State<LoginPage> {
                             controller: _passwordCtrl,
                             obscureText: _obscure,
                             decoration: InputDecoration(
-                              hintText: 'Password',
+                              hintText: 'รหัสผ่าน',
                               isDense: true,
                               contentPadding: const EdgeInsets.symmetric(
                                 horizontal: 14,
@@ -153,7 +153,7 @@ class _LoginPageState extends State<LoginPage> {
                               onPressed: () {
                                 // TODO: handle login
                               },
-                              child: const Text('Login'),
+                              child: const Text('เข้าสู่ระบบ'),
                             ),
                           ),
                           const SizedBox(height: 8),
@@ -163,7 +163,7 @@ class _LoginPageState extends State<LoginPage> {
                                 Get.to(() => const ChooseRole());
                               },
                               child: const Text(
-                                'Sign up',
+                                'ลงทะเบียน',
                                 style: TextStyle(
                                   color: Color(0xFF2D72FF),
                                   fontWeight: FontWeight.w500,
