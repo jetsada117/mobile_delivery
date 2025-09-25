@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:mobile_delivery/pages/login.dart';
 
 class UserRegister extends StatefulWidget {
   const UserRegister({super.key});
@@ -58,7 +60,7 @@ class _UserRegisterState extends State<UserRegister> {
                 text: const TextSpan(
                   children: [
                     TextSpan(
-                      text: 'User',
+                      text: 'ผู้ใช้',
                       style: TextStyle(
                         color: Colors.black,
                         fontSize: 18,
@@ -74,7 +76,7 @@ class _UserRegisterState extends State<UserRegister> {
                       ),
                     ),
                     TextSpan(
-                      text: 'Rider',
+                      text: 'ไรเดอร์',
                       style: TextStyle(
                         color: linkBlue, // สีน้ำเงินตามภาพ
                         fontSize: 18,
@@ -101,14 +103,14 @@ class _UserRegisterState extends State<UserRegister> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        _label('Username'),
-                        _input(controller: _username, hint: 'Username'),
+                        _label('ชื่อ'),
+                        _input(controller: _username, hint: 'ชื่อ'),
                         const SizedBox(height: 14),
 
-                        _label('Password'),
+                        _label('รหัสผ่าน'),
                         _input(
                           controller: _password,
-                          hint: 'Password',
+                          hint: 'รหัสผ่าน',
                           obscure: _obscure,
                           suffix: IconButton(
                             icon: Icon(
@@ -122,10 +124,10 @@ class _UserRegisterState extends State<UserRegister> {
                         ),
                         const SizedBox(height: 14),
 
-                        _label('Phone'),
+                        _label('เบอร์โทรศัพท์'),
                         _input(
                           controller: _phone,
-                          hint: 'Phone',
+                          hint: 'เบอร์โทรศัพท์',
                           keyboardType: TextInputType.phone,
                         ),
                         const SizedBox(height: 14),
@@ -204,7 +206,7 @@ class _UserRegisterState extends State<UserRegister> {
                           height: 44,
                           child: ElevatedButton(
                             onPressed: () {
-                              // TODO: submit form
+                              Get.to(() => const LoginPage());
                             },
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.black,
@@ -213,7 +215,7 @@ class _UserRegisterState extends State<UserRegister> {
                                 borderRadius: BorderRadius.circular(10),
                               ),
                             ),
-                            child: const Text('Submit'),
+                            child: const Text('ส่ง'),
                           ),
                         ),
 
@@ -223,10 +225,10 @@ class _UserRegisterState extends State<UserRegister> {
                         Center(
                           child: TextButton(
                             onPressed: () {
-                              // TODO: ไปหน้า Sign in (ถ้าต้องการ)
+                              Get.to(() => const LoginPage());
                             },
                             child: const Text(
-                              'Sign in',
+                              'ยกเลิก',
                               style: TextStyle(
                                 color: linkBlue,
                                 fontWeight: FontWeight.w500,
