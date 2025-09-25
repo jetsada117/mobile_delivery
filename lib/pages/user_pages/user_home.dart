@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:get/get_core/src/get_main.dart';
+import 'package:mobile_delivery/pages/user_pages/user_createparcel.dart';
 
 class UserHomePage extends StatefulWidget {
   final String username;
@@ -101,7 +104,14 @@ class _UserHomePageState extends State<UserHomePage> {
                   SizedBox(
                     height: 36,
                     child: ElevatedButton(
-                      onPressed: () { /* TODO: ไปหน้าสร้างสินค้า */ },
+                         onPressed: () {
+                           
+                            Navigator.of(context).pushReplacement(
+                              MaterialPageRoute(
+                                builder: (_) => const CreateParcelPage(),
+                              ),
+                            );
+                          },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.black,
                         foregroundColor: Colors.white,
@@ -120,19 +130,27 @@ class _UserHomePageState extends State<UserHomePage> {
 
       // Bottom Navigation
       bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _navIndex,
-        type: BottomNavigationBarType.fixed,
-        selectedItemColor: Colors.black,
-        unselectedItemColor: Colors.black54,
-        backgroundColor: cardBg,
-        onTap: (i) => setState(() => _navIndex = i),
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home_outlined), label: 'หน้าหลัก'),
-          BottomNavigationBarItem(icon: Icon(Icons.local_shipping_outlined), label: 'สินค้าที่ส่ง'),
-          BottomNavigationBarItem(icon: Icon(Icons.inbox_outlined), label: 'สินค้าที่ได้รับ'),
-          BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: 'โปรไฟล์'),
-        ],
-      ),
+  currentIndex: _navIndex,
+  type: BottomNavigationBarType.fixed,
+  selectedItemColor: Colors.black,
+  unselectedItemColor: Colors.black54,
+  backgroundColor: cardBg,
+  onTap: (i) {
+    if (i == 0) {
+      // ไปหน้า "หน้าหลัก" และแทนหน้าปัจจุบัน
+      Get.off(() => const UserHomePage());
+      return;
+    }
+    setState(() => _navIndex = i);
+  },
+  items: const [
+    BottomNavigationBarItem(icon: Icon(Icons.home_outlined), label: 'หน้าหลัก'),
+    BottomNavigationBarItem(icon: Icon(Icons.local_shipping_outlined), label: 'สินค้าที่ส่ง'),
+    BottomNavigationBarItem(icon: Icon(Icons.inbox_outlined), label: 'สินค้าที่ได้รับ'),
+    BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: 'โปรไฟล์'),
+  ],
+)
+
     );
   }
 }
