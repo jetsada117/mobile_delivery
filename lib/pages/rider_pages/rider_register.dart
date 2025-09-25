@@ -61,7 +61,7 @@ class _RiderRegisterState extends State<RiderRegister> {
                 text: const TextSpan(
                   children: [
                     TextSpan(
-                      text: 'User',
+                      text: 'ผู้ใช่',
                       style: TextStyle(
                         color: Color(0xFF69A2FF), // ฟ้าอ่อนทึบตามภาพ
                         fontSize: 18,
@@ -77,7 +77,7 @@ class _RiderRegisterState extends State<RiderRegister> {
                       ),
                     ),
                     TextSpan(
-                      text: 'Rider',
+                      text: 'ไรเดอร์',
                       style: TextStyle(
                         color: Colors.black87,
                         fontSize: 18,
@@ -104,14 +104,14 @@ class _RiderRegisterState extends State<RiderRegister> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        _label('Username'),
-                        _input(controller: _username, hint: 'Username'),
+                        _label('ชื่อ'),
+                        _input(controller: _username, hint: 'ชื่อ'),
                         const SizedBox(height: 12),
 
-                        _label('Password'),
+                        _label('รหัสผ่าน'),
                         _input(
                           controller: _password,
-                          hint: 'Password',
+                          hint: 'รหัสผ่าน',
                           obscure: _obscure1,
                           suffix: IconButton(
                             icon: Icon(
@@ -125,10 +125,10 @@ class _RiderRegisterState extends State<RiderRegister> {
                         ),
                         const SizedBox(height: 12),
 
-                        _label('Confirm Password'),
+                        _label('ยืนยัน รหัสผ่าน'),
                         _input(
                           controller: _confirm,
-                          hint: 'Confirm Password',
+                          hint: 'ยืนยัน รหัสผ่าน',
                           obscure: _obscure2,
                           suffix: IconButton(
                             icon: Icon(
@@ -142,10 +142,10 @@ class _RiderRegisterState extends State<RiderRegister> {
                         ),
                         const SizedBox(height: 12),
 
-                        _label('Phone'),
+                        _label('เบอร์โทรศัพท์'),
                         _input(
                           controller: _phone,
-                          hint: 'Phone',
+                          hint: 'เบอร์โทรศัพท์',
                           keyboardType: TextInputType.phone,
                         ),
                         const SizedBox(height: 12),

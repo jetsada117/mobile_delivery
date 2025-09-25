@@ -1,7 +1,9 @@
 import 'dart:developer';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
 import 'package:get/get.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:mobile_delivery/pages/login.dart';
 import 'package:geolocator/geolocator.dart';
 
@@ -16,9 +18,23 @@ class _UserRegisterState extends State<UserRegister> {
   final _username = TextEditingController();
   final _password = TextEditingController();
   final _phone = TextEditingController();
+   final _confirm = TextEditingController();
   final _address = TextEditingController();
 
+    bool _obscure1 = true;
+    bool _obscure2 = true;
+
   bool _obscure = true;
+  var mapController = MapController();
+  var position;
+  final double _zoom = 15.2;
+   LatLng? _center;
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    getgps();
+  }
 
   @override
   void dispose() {
@@ -26,6 +42,7 @@ class _UserRegisterState extends State<UserRegister> {
     _password.dispose();
     _phone.dispose();
     _address.dispose();
+    _confirm.dispose();
     super.dispose();
   }
 
@@ -110,22 +127,39 @@ class _UserRegisterState extends State<UserRegister> {
                         _input(controller: _username, hint: 'ชื่อ'),
                         const SizedBox(height: 14),
 
-                        _label('รหัสผ่าน'),
+                        _label('Password'),
                         _input(
                           controller: _password,
-                          hint: 'รหัสผ่าน',
-                          obscure: _obscure,
+                          hint: 'Password',
+                          obscure: _obscure1,
                           suffix: IconButton(
                             icon: Icon(
-                              _obscure
+                              _obscure1
                                   ? Icons.visibility_off
                                   : Icons.visibility,
                             ),
                             onPressed: () =>
-                                setState(() => _obscure = !_obscure),
+                                setState(() => _obscure1 = !_obscure1),
                           ),
                         ),
-                        const SizedBox(height: 14),
+                        const SizedBox(height: 12),
+
+                        _label('ยืนยันรหัสผ่าน'),
+                        _input(
+                          controller: _confirm,
+                          hint: 'ยืนยันรหัสผ่าน',
+                          obscure: _obscure2,
+                          suffix: IconButton(
+                            icon: Icon(
+                              _obscure2
+                                  ? Icons.visibility_off
+                                  : Icons.visibility,
+                            ),
+                            onPressed: () =>
+                                setState(() => _obscure2 = !_obscure2),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
 
                         _label('เบอร์โทรศัพท์'),
                         _input(
@@ -143,24 +177,50 @@ class _UserRegisterState extends State<UserRegister> {
                         ),
                         const SizedBox(height: 12),
 
-                        // กล่องแผนที่ (placeholder ตามภาพ)
-                        GestureDetector(
-                          onTap: () async {
-                            var position = await _determinePosition();
-                            log("${position.latitude} ${position.longitude}");
-                          },
-                          child: Container(
-                            height: 80,
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              border: Border.all(color: borderCol),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            alignment: Alignment.center,
-                            child: const Opacity(
-                              opacity: 0.45,
-                              child: Icon(Icons.map, size: 36),
-                            ),
+                        Center(
+                          child: Column(
+                            children: [
+                            
+                              const SizedBox(height: 12),
+                              
+                              SizedBox(
+                                height: 240, 
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(12),
+                                  child: FlutterMap(
+                                    mapController: mapController,
+                                    options: MapOptions(
+                                      initialCenter: _center ?? const LatLng(0,0),
+                                      initialZoom: 15.2,
+                                      onTap: (tapPosition, point) {
+                                        log(point.toString());
+                                      },
+                                    ),
+                                    children: [
+                                      TileLayer(
+                                        urlTemplate:
+                                            'https://tile.thunderforest.com/atlas/{z}/{x}/{y}.png?apikey=6949d257c8de4157a028c7a44b05af3d',
+                                        userAgentPackageName:
+                                            'com.example.mobile_delivery',
+                                      ),
+                                      MarkerLayer(
+                                        markers: [
+                                          Marker(
+                                            point: _center ?? const LatLng(0,0),
+                                            width: 40,
+                                            height: 40,
+                                            child: const Icon(
+                                              Icons.location_on,
+                                              color: Colors.red,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                         const SizedBox(height: 14),
@@ -203,7 +263,7 @@ class _UserRegisterState extends State<UserRegister> {
                                   ),
                                   elevation: 0,
                                 ),
-                                child: const Text('เลือกรูป'),
+                                child: const Text('เพิ่มรูป'),
                               ),
                             ),
                           ],
@@ -298,6 +358,22 @@ class _UserRegisterState extends State<UserRegister> {
         suffixIcon: suffix,
       ),
     );
+  }
+
+Future<void> getgps() async {
+    try {
+      final p = await _determinePosition();
+      log("${p.latitude} ${p.longitude}");
+
+      setState(() {
+        _center = LatLng(p.latitude, p.longitude);
+      });
+
+      // เลื่อนกล้องไปยังตำแหน่ง GPS
+      mapController.move(_center!, _zoom);
+    } catch (e) {
+      log("getgps error: $e");
+    }
   }
 
   /// Determine the current position of the device.
