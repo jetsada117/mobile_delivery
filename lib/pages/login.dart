@@ -1,6 +1,11 @@
+import 'dart:developer';
+
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:mobile_delivery/pages/chooserole.dart';
+import 'package:mobile_delivery/pages/rider_pages/rider_home.dart';
+import 'package:mobile_delivery/pages/user_pages/user_home.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -150,9 +155,7 @@ class _LoginPageState extends State<LoginPage> {
                                   borderRadius: BorderRadius.circular(10),
                                 ),
                               ),
-                              onPressed: () {
-                                // TODO: handle login
-                              },
+                              onPressed: _login,
                               child: const Text('เข้าสู่ระบบ'),
                             ),
                           ),
@@ -182,6 +185,75 @@ class _LoginPageState extends State<LoginPage> {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Future<void> _login() async {
+    final phone = _phoneCtrl.text.trim();
+    final password = _passwordCtrl.text.trim();
+
+    if (phone.isEmpty || password.isEmpty) {
+      _showError("กรุณากรอกเบอร์โทรศัพท์และรหัสผ่าน");
+      return;
+    }
+
+    try {
+      // 🔎 1) เช็คใน rider ก่อน
+      final riderSnap = await FirebaseFirestore.instance
+          .collection('riders')
+          .where('phone', isEqualTo: phone)
+          .where('password', isEqualTo: password)
+          .limit(1)
+          .get();
+
+      if (riderSnap.docs.isNotEmpty) {
+        final riderData = riderSnap.docs.first.data();
+        log("Login success as Rider: $riderData");
+
+        Get.snackbar("สำเร็จ", "เข้าสู่ระบบในฐานะ Rider");
+        // 👉 ไปหน้า RiderHomePage
+        Get.to(() => const RiderHomePage());
+        return;
+      }
+
+      // 🔎 2) ถ้าไม่เจอใน rider → เช็คใน user
+      final userSnap = await FirebaseFirestore.instance
+          .collection('users')
+          .where('phone', isEqualTo: phone)
+          .where('password', isEqualTo: password)
+          .limit(1)
+          .get();
+
+      if (userSnap.docs.isNotEmpty) {
+        final userData = userSnap.docs.first.data();
+        log("Login success as User: $userData");
+
+        Get.snackbar("สำเร็จ", "เข้าสู่ระบบในฐานะ User");
+        // 👉 ไปหน้า UserHomePage
+        Get.to(() => const UserHomePage());
+        return;
+      }
+
+      // ❌ ถ้าไม่เจอทั้งสอง collection
+      _showError("เบอร์โทรศัพท์หรือรหัสผ่านไม่ถูกต้อง");
+    } catch (e) {
+      _showError("เกิดข้อผิดพลาด: $e");
+    }
+  }
+
+  void _showError(String msg) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text("ผิดพลาด"),
+        content: Text(msg),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("ตกลง"),
+          ),
+        ],
       ),
     );
   }

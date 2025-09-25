@@ -249,8 +249,6 @@ class _SendParcelPageState extends State<SendParcelPage> {
     );
   }
 
-  // --- Widgets ย่อย ---
-
   Widget _addressTile({
     required TextEditingController controller,
     required bool checked,

@@ -21,7 +21,6 @@ class _CreateParcelPageState extends State<CreateParcelPage> {
   // Image
   final _picker = ImagePicker();
   XFile? _image;
-  XFile? _selectedImage;
 
   // Address selection (เลือก 1 อย่าง)
   int? _selectedAddr; // 1 หรือ 2
@@ -34,11 +33,6 @@ class _CreateParcelPageState extends State<CreateParcelPage> {
     _addr1.dispose();
     _addr2.dispose();
     super.dispose();
-  }
-
-  Future<void> _pickImage() async {
-    final x = await _picker.pickImage(source: ImageSource.gallery);
-    if (x != null) setState(() => _image = x);
   }
 
   @override
@@ -103,7 +97,6 @@ class _CreateParcelPageState extends State<CreateParcelPage> {
                                   context,
                                 );
                                 if (img != null) {
-                                  setState(() => _selectedImage = img);
                                   log('Picked: ${img.path}');
                                 } else {
                                   log('No Image');
