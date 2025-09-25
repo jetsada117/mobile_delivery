@@ -1,5 +1,6 @@
 import 'dart:developer';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:get/get.dart';
@@ -22,7 +23,8 @@ class _UserRegisterState extends State<UserRegister> {
   final _phone = TextEditingController();
   final _confirm = TextEditingController();
   final _address = TextEditingController();
-  final ImagePicker _picker = ImagePicker(); // <- ตัวเลือกภาพ
+  final ImagePicker _picker = ImagePicker();
+  var db = FirebaseFirestore.instance;
 
   bool _obscure1 = true;
   bool _obscure2 = true;
@@ -30,9 +32,7 @@ class _UserRegisterState extends State<UserRegister> {
   var mapController = MapController();
   var position;
   final double _zoom = 15.2;
-
   LatLng? _center;
-  XFile? _selectedImage;
 
   @override
   void initState() {
@@ -52,11 +52,10 @@ class _UserRegisterState extends State<UserRegister> {
 
   @override
   Widget build(BuildContext context) {
-    // Colors
-    const bg = Color(0xFFD2C2F1); // พื้นหลังม่วงอ่อน
-    const cardBg = Color(0xFFF4EBFF); // พื้นการ์ด
+    const bg = Color(0xFFD2C2F1);
+    const cardBg = Color(0xFFF4EBFF);
     const borderCol = Color(0x55000000);
-    const pill = Color(0xFFC9A9F5); // ปุ่มม่วงอ่อน
+    const pill = Color(0xFFC9A9F5);
     const linkBlue = Color(0xFF2D72FF);
 
     return Scaffold(
@@ -64,7 +63,7 @@ class _UserRegisterState extends State<UserRegister> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        toolbarHeight: 0, // ให้หน้าคลีนเหมือนภาพ
+        toolbarHeight: 0,
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -109,8 +108,6 @@ class _UserRegisterState extends State<UserRegister> {
                 ),
               ),
               const SizedBox(height: 12),
-
-              // ===== Card ฟอร์ม =====
               ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 420),
                 child: Card(
@@ -227,17 +224,13 @@ class _UserRegisterState extends State<UserRegister> {
                           ),
                         ),
                         const SizedBox(height: 14),
-
-                        // ปุ่มอัปโหลด/เลือกรูป (สองปุ่มเรียงกัน)
                         Row(
                           children: [
                             Expanded(
                               child: SizedBox(
                                 height: 40,
                                 child: ElevatedButton(
-                                  onPressed: () {
-                                    // TODO: อัปโหลดรูปโปรไฟล์
-                                  },
+                                  onPressed: () {},
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: pill,
                                     foregroundColor: Colors.black87,
@@ -260,7 +253,6 @@ class _UserRegisterState extends State<UserRegister> {
                                     context,
                                   );
                                   if (img != null) {
-                                    setState(() => _selectedImage = img);
                                     log('Picked: ${img.path}');
                                   } else {
                                     log('No Image');
@@ -280,14 +272,10 @@ class _UserRegisterState extends State<UserRegister> {
                           ],
                         ),
                         const SizedBox(height: 14),
-
-                        // ปุ่ม Submit สีดำ เต็มความกว้าง
                         SizedBox(
                           height: 44,
                           child: ElevatedButton(
-                            onPressed: () {
-                              Get.to(() => const LoginPage());
-                            },
+                            onPressed: addData,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.black,
                               foregroundColor: Colors.white,
@@ -295,17 +283,14 @@ class _UserRegisterState extends State<UserRegister> {
                                 borderRadius: BorderRadius.circular(10),
                               ),
                             ),
-                            child: const Text('ส่ง'),
+                            child: const Text('ลงทะเบียน'),
                           ),
                         ),
-
                         const SizedBox(height: 6),
-
-                        // ลิงก์ Sign in (เป็นปุ่มแต่เพื่อให้เหมือนภาพ กดได้หรือไม่ได้ก็ได้)
                         Center(
                           child: TextButton(
                             onPressed: () {
-                              Get.to(() => const LoginPage());
+                              Get.back();
                             },
                             child: const Text(
                               'ยกเลิก',
@@ -541,20 +526,96 @@ class _UserRegisterState extends State<UserRegister> {
     );
   }
 
-  /// Determine the current position of the device.
-  ///
-  /// When the location services are not enabled or permissions
-  /// are denied the `Future` will return an error.
+  Future<void> addData() async {
+    if (_username.text.isEmpty ||
+        _phone.text.isEmpty ||
+        _password.text.isEmpty ||
+        _confirm.text.isEmpty ||
+        _address.text.isEmpty) {
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text("กรอกข้อมูลไม่ครบ"),
+          content: Text("กรุณากรอกข้อมูลทุกช่องให้ครบถ้วน"),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text("ตกลง"),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
+    if (_password.text != _confirm.text) {
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text("รหัสผ่านไม่ตรงกัน"),
+          content: Text("กรุณากรอกรหัสผ่านให้ตรงกัน"),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text("ตกลง"),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
+    final collection = FirebaseFirestore.instance.collection('user');
+    final snapshot = await collection.count().get();
+    int userId = snapshot.count! + 1;
+
+    var data = {
+      'name': _username.text,
+      'phone': _phone.text,
+      'password': _password.text,
+      'user_image': "",
+    };
+
+    var address = {
+      'address': _address.text,
+      'lat': _center?.latitude,
+      'lng': _center?.longitude,
+    };
+
+    await db.collection('user').doc(userId.toString()).set(data);
+
+    await db
+        .collection('user')
+        .doc(userId.toString())
+        .collection('address')
+        .add(address);
+
+    log("User: $data");
+    log("Address: $address");
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text("สำเร็จ"),
+        content: Text("เพิ่มข้อมูล User เรียบร้อยแล้ว"),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Get.to(() => LoginPage());
+            },
+            child: Text("ตกลง"),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<Position> _determinePosition() async {
     bool serviceEnabled;
     LocationPermission permission;
 
-    // Test if location services are enabled.
     serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
-      // Location services are not enabled don't continue
-      // accessing the position and request users of the
-      // App to enable the location services.
       return Future.error('Location services are disabled.');
     }
 
@@ -562,24 +623,16 @@ class _UserRegisterState extends State<UserRegister> {
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
       if (permission == LocationPermission.denied) {
-        // Permissions are denied, next time you could try
-        // requesting permissions again (this is also where
-        // Android's shouldShowRequestPermissionRationale
-        // returned true. According to Android guidelines
-        // your App should show an explanatory UI now.
         return Future.error('Location permissions are denied');
       }
     }
 
     if (permission == LocationPermission.deniedForever) {
-      // Permissions are denied forever, handle appropriately.
       return Future.error(
         'Location permissions are permanently denied, we cannot request permissions.',
       );
     }
 
-    // When we reach here, permissions are granted and we can
-    // continue accessing the position of the device.
     return await Geolocator.getCurrentPosition();
   }
 }
