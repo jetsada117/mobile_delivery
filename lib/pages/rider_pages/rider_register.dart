@@ -1,3 +1,6 @@
+import 'dart:developer';
+
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:mobile_delivery/pages/login.dart';
@@ -10,7 +13,6 @@ class RiderRegister extends StatefulWidget {
 }
 
 class _RiderRegisterState extends State<RiderRegister> {
-  // controllers
   final _username = TextEditingController();
   final _password = TextEditingController();
   final _confirm = TextEditingController();
@@ -19,6 +21,8 @@ class _RiderRegisterState extends State<RiderRegister> {
 
   bool _obscure1 = true;
   bool _obscure2 = true;
+
+  var db = FirebaseFirestore.instance;
 
   @override
   void dispose() {
@@ -32,8 +36,8 @@ class _RiderRegisterState extends State<RiderRegister> {
 
   @override
   Widget build(BuildContext context) {
-    const bg = Color(0xFFD2C2F1); // ม่วงอ่อนพื้นหลัง
-    const cardBg = Color(0xFFF4EBFF); // สีการ์ด
+    const bg = Color(0xFFD2C2F1);
+    const cardBg = Color(0xFFF4EBFF);
     const linkBlue = Color(0xFF2D72FF);
     const borderCol = Color(0x55000000);
 
@@ -61,7 +65,7 @@ class _RiderRegisterState extends State<RiderRegister> {
                 text: const TextSpan(
                   children: [
                     TextSpan(
-                      text: 'ผู้ใช่',
+                      text: 'ผู้ใช้',
                       style: TextStyle(
                         color: Color(0xFF69A2FF), // ฟ้าอ่อนทึบตามภาพ
                         fontSize: 18,
@@ -125,10 +129,10 @@ class _RiderRegisterState extends State<RiderRegister> {
                         ),
                         const SizedBox(height: 12),
 
-                        _label('ยืนยัน รหัสผ่าน'),
+                        _label('ยืนยันรหัสผ่าน'),
                         _input(
                           controller: _confirm,
-                          hint: 'ยืนยัน รหัสผ่าน',
+                          hint: 'ยืนยันรหัสผ่าน',
                           obscure: _obscure2,
                           suffix: IconButton(
                             icon: Icon(
@@ -176,9 +180,7 @@ class _RiderRegisterState extends State<RiderRegister> {
                         SizedBox(
                           height: 44,
                           child: ElevatedButton(
-                            onPressed: () {
-                              Get.to(() => const LoginPage());
-                            },
+                            onPressed: addData,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.black,
                               foregroundColor: Colors.white,
@@ -186,7 +188,7 @@ class _RiderRegisterState extends State<RiderRegister> {
                                 borderRadius: BorderRadius.circular(10),
                               ),
                             ),
-                            child: const Text('ส่ง'),
+                            child: const Text('ลงทะเบียน'),
                           ),
                         ),
                         const SizedBox(height: 6),
@@ -218,7 +220,6 @@ class _RiderRegisterState extends State<RiderRegister> {
     );
   }
 
-  // -------- Widgets ย่อย --------
   Widget _label(String text) => Padding(
     padding: const EdgeInsets.only(bottom: 6),
     child: Text(
@@ -262,13 +263,11 @@ class _RiderRegisterState extends State<RiderRegister> {
   Widget _uploadRow({required String caption, required VoidCallback onPick}) {
     return Row(
       children: [
-        // ปุ่มซ้าย (เทา/ม่วงอ่อน กว้างเต็ม)
         Expanded(
           child: SizedBox(
             height: 40,
             child: ElevatedButton(
-              onPressed:
-                  () {}, // แสดงปุ่มทึบเหมือนตัวอย่าง ยังไม่ต้องทำงานก็ได้
+              onPressed: () {},
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFFC9A9F5),
                 foregroundColor: Colors.black87,
@@ -300,6 +299,80 @@ class _RiderRegisterState extends State<RiderRegister> {
           ),
         ),
       ],
+    );
+  }
+
+  Future<void> addData() async {
+    if (_username.text.isEmpty ||
+        _phone.text.isEmpty ||
+        _password.text.isEmpty ||
+        _confirm.text.isEmpty ||
+        _plate.text.isEmpty) {
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text("กรอกข้อมูลไม่ครบ"),
+          content: Text("กรุณากรอกข้อมูลทุกช่องให้ครบถ้วน"),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text("ตกลง"),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
+    if (_password.text != _confirm.text) {
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text("รหัสผ่านไม่ตรงกัน"),
+          content: Text("กรุณากรอกรหัสผ่านให้ตรงกัน"),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text("ตกลง"),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
+    final collection = FirebaseFirestore.instance.collection('rider');
+    final snapshot = await collection.count().get();
+    int newId = snapshot.count! + 1;
+
+    var data = {
+      'name': _username.text,
+      'phone': _phone.text,
+      'password': _password.text,
+      'plate_no': _plate.text,
+      'lat': "",
+      'lng': "",
+      'vihicle_image': "",
+      'rider_image': "",
+    };
+
+    log(data.toString());
+    db.collection('rider').doc(newId.toString()).set(data);
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text("สำเร็จ"),
+        content: Text("เพิ่มข้อมูล Rider เรียบร้อยแล้ว"),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Get.to(() => LoginPage());
+            },
+            child: Text("ตกลง"),
+          ),
+        ],
+      ),
     );
   }
 }
