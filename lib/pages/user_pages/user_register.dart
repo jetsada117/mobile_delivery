@@ -18,20 +18,18 @@ class _UserRegisterState extends State<UserRegister> {
   final _username = TextEditingController();
   final _password = TextEditingController();
   final _phone = TextEditingController();
-   final _confirm = TextEditingController();
+  final _confirm = TextEditingController();
   final _address = TextEditingController();
 
-    bool _obscure1 = true;
-    bool _obscure2 = true;
+  bool _obscure1 = true;
+  bool _obscure2 = true;
 
-  bool _obscure = true;
   var mapController = MapController();
   var position;
   final double _zoom = 15.2;
-   LatLng? _center;
+  LatLng? _center;
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
     getgps();
   }
@@ -180,17 +178,17 @@ class _UserRegisterState extends State<UserRegister> {
                         Center(
                           child: Column(
                             children: [
-                            
                               const SizedBox(height: 12),
-                              
+
                               SizedBox(
-                                height: 240, 
+                                height: 240,
                                 child: ClipRRect(
                                   borderRadius: BorderRadius.circular(12),
                                   child: FlutterMap(
                                     mapController: mapController,
                                     options: MapOptions(
-                                      initialCenter: _center ?? const LatLng(0,0),
+                                      initialCenter:
+                                          _center ?? const LatLng(0, 0),
                                       initialZoom: 15.2,
                                       onTap: (tapPosition, point) {
                                         log(point.toString());
@@ -206,7 +204,8 @@ class _UserRegisterState extends State<UserRegister> {
                                       MarkerLayer(
                                         markers: [
                                           Marker(
-                                            point: _center ?? const LatLng(0,0),
+                                            point:
+                                                _center ?? const LatLng(0, 0),
                                             width: 40,
                                             height: 40,
                                             child: const Icon(
@@ -360,7 +359,7 @@ class _UserRegisterState extends State<UserRegister> {
     );
   }
 
-Future<void> getgps() async {
+  Future<void> getgps() async {
     try {
       final p = await _determinePosition();
       log("${p.latitude} ${p.longitude}");
