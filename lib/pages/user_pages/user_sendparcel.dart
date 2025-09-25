@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:get/get_core/src/get_main.dart';
 import 'package:mobile_delivery/pages/user_pages/user_createparcel.dart';
 import 'package:mobile_delivery/pages/user_pages/user_home.dart';
 
@@ -187,13 +186,11 @@ class _SendParcelPageState extends State<SendParcelPage> {
                   width: 120,
                   height: 44,
                   child: ElevatedButton(
-                     onPressed: () {
-                            Navigator.of(context).pushReplacement(
-                              MaterialPageRoute(
-                                builder: (_) => const UserHomePage(),
-                              ),
-                            );
-                          },
+                    onPressed: () {
+                      Navigator.of(context).pushReplacement(
+                        MaterialPageRoute(builder: (_) => const UserHomePage()),
+                      );
+                    },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: linkBlue,
                       disabledBackgroundColor: linkBlue.withOpacity(.4),
@@ -312,63 +309,64 @@ class _SendParcelPageState extends State<SendParcelPage> {
       ),
     );
   }
+
   Widget _recipientInfo(_Recipient? r) {
-  // ถ้ายังไม่ค้นหา โชว์ placeholder ตามสไตล์ภาพ
-  final name  = r?.name  ?? 'ชื่อผู้รับ : -';
-  final phone = r?.phone ?? 'เบอร์โทร : -';
-  final avatar = r?.avatarUrl;
+    // ถ้ายังไม่ค้นหา โชว์ placeholder ตามสไตล์ภาพ
+    final name = r?.name ?? 'ชื่อผู้รับ : -';
+    final phone = r?.phone ?? 'เบอร์โทร : -';
+    final avatar = r?.avatarUrl;
 
-  return Container(
-    padding: const EdgeInsets.all(12),
-    decoration: BoxDecoration(
-      color: Colors.white.withOpacity(0.08),
-      borderRadius: BorderRadius.circular(12),
-      border: Border.all(color: Colors.white.withOpacity(0.25)),
-    ),
-    child: Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        CircleAvatar(
-          radius: 28,
-          backgroundColor: Colors.white,
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(999),
-            child: avatar == null
-                ? const Icon(Icons.person, size: 28)
-                : Image.network(
-                    avatar,
-                    width: 56,
-                    height: 56,
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => const Icon(Icons.person, size: 28),
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.08),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.white.withOpacity(0.25)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          CircleAvatar(
+            radius: 28,
+            backgroundColor: Colors.white,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(999),
+              child: avatar == null
+                  ? const Icon(Icons.person, size: 28)
+                  : Image.network(
+                      avatar,
+                      width: 56,
+                      height: 56,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) =>
+                          const Icon(Icons.person, size: 28),
+                    ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'ข้อมูลรับ : ${r?.name ?? '—'}',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
                   ),
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'ข้อมูลรับ : ${r?.name ?? '—'}',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w600,
                 ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                'เบอร์โทร : ${r?.phone ?? '—'}',
-                style: const TextStyle(color: Colors.white),
-              ),
-            ],
+                const SizedBox(height: 4),
+                Text(
+                  'เบอร์โทร : ${r?.phone ?? '—'}',
+                  style: const TextStyle(color: Colors.white),
+                ),
+              ],
+            ),
           ),
-        ),
-      ],
-    ),
-  );
-}
-
+        ],
+      ),
+    );
+  }
 }
 
 class _Recipient {

@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:get/route_manager.dart';
 import 'package:mobile_delivery/firebase_options.dart';
 import 'package:mobile_delivery/pages/login.dart';
-import 'package:mobile_delivery/pages/user_pages/user_createparcel.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -27,7 +26,7 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
-      home: const CreateParcelPage()
+      home: const LoginPage(),
     );
   }
 }

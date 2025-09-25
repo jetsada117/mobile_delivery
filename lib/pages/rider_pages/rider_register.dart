@@ -291,16 +291,14 @@ class _RiderRegisterState extends State<RiderRegister> {
           height: 40,
           child: ElevatedButton(
             onPressed: () async {
-                                  final XFile? img = await _openImagePopup(
-                                    context,
-                                  );
-                                  if (img != null) {
-                                    setState(() => _selectedImage = img);
-                                    log('Picked: ${img.path}');
-                                  } else {
-                                    log('No Image');
-                                  }
-                                },
+              final XFile? img = await _openImagePopup(context);
+              if (img != null) {
+                setState(() => _selectedImage = img);
+                log('Picked: ${img.path}');
+              } else {
+                log('No Image');
+              }
+            },
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.black,
               foregroundColor: Colors.white,
@@ -389,6 +387,7 @@ class _RiderRegisterState extends State<RiderRegister> {
       ),
     );
   }
+
   Future<XFile?> _openImagePopup(BuildContext context) async {
     XFile? picked;
 

@@ -231,7 +231,6 @@ class _CreateParcelPageState extends State<CreateParcelPage> {
           BottomNavigationBarItem(
             icon: Icon(Icons.home_outlined),
             label: 'หน้าหลัก',
-
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.local_shipping_outlined),
