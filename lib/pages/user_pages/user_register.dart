@@ -78,8 +78,6 @@ class _UserRegisterState extends State<UserRegister> {
                 style: TextStyle(fontSize: 30, fontWeight: FontWeight.w700),
               ),
               const SizedBox(height: 6),
-
-              // ===== User | Rider (กดไม่ได้ / แสดงผลอย่างเดียว) =====
               RichText(
                 text: const TextSpan(
                   children: [
