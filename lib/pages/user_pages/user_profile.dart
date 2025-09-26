@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:mobile_delivery/pages/user_pages/user_ReceivedItems.dart';
 import 'package:mobile_delivery/pages/user_pages/user_addaddress.dart';
 import 'package:mobile_delivery/pages/user_pages/user_editaddress.dart';
 import 'package:mobile_delivery/pages/user_pages/user_home.dart';
@@ -190,6 +191,11 @@ class _UserProfilePageState extends State<UserProfilePage> {
           if (i == 1) {
             // ไปหน้า "หน้าหลัก" และแทนหน้าปัจจุบัน
             Get.off(() => const SentItemsPage());
+            return;
+          }
+          if (i == 2) {
+            // ไปหน้า "หน้าหลัก" และแทนหน้าปัจจุบัน
+            Get.off(() => const ReceivedItemsPage());
             return;
           }
           if (i == 3) {

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get/get_core/src/get_main.dart';
+import 'package:mobile_delivery/pages/user_pages/user_ReceivedItems.dart';
 import 'package:mobile_delivery/pages/user_pages/user_createparcel.dart';
 import 'package:mobile_delivery/pages/user_pages/user_profile.dart';
 import 'package:mobile_delivery/pages/user_pages/user_sentItems.dart';
@@ -155,6 +156,11 @@ class _UserHomePageState extends State<UserHomePage> {
           if (i == 1) {
             // ไปหน้า "หน้าหลัก" และแทนหน้าปัจจุบัน
             Get.off(() => const SentItemsPage());
+            return;
+          }
+           if (i == 2) {
+            // ไปหน้า "หน้าหลัก" และแทนหน้าปัจจุบัน
+            Get.off(() => const ReceivedItemsPage());
             return;
           }
            if (i == 3) {

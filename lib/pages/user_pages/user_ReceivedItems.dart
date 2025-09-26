@@ -1,45 +1,42 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:mobile_delivery/pages/user_pages/user_ReceivedItems.dart';
 import 'package:mobile_delivery/pages/user_pages/user_home.dart';
 import 'package:mobile_delivery/pages/user_pages/user_profile.dart';
+import 'package:mobile_delivery/pages/user_pages/user_sentItems.dart';
 
-class SentItemsPage extends StatefulWidget {
-  const SentItemsPage({super.key});
+class ReceivedItemsPage extends StatefulWidget {
+  const ReceivedItemsPage({super.key});
 
   @override
-  State<SentItemsPage> createState() => _SentItemsPageState();
+  State<ReceivedItemsPage> createState() => _ReceivedItemsPageState();
 }
 
-class _SentItemsPageState extends State<SentItemsPage> {
-  // โทนสีเดียวกับโปรเจ็กต์
+class _ReceivedItemsPageState extends State<ReceivedItemsPage> {
+  // โทนสีโปรเจ็กต์
   static const bg = Color(0xFFD2C2F1);
   static const cardBg = Color(0xFFF4EBFF);
   static const borderCol = Color(0x55000000);
 
-  int _navIndex = 1; // แท็บ "สินค้าที่ส่ง"
+  int _navIndex = 2; // แท็บ "สินค้าที่ได้รับ"
 
-  final _items = <_SentItem>[
-    _SentItem(
-      name: 'ปลากระป๋อง',
-      phone: '085-858-8588',
-
-      status: 'กำลังจัดส่งสินค้า',
-      imageUrl: 'https://picsum.photos/seed/can/200',
-    ),
-    _SentItem(
-      name: 'มาม่า',
+  final _items = const <_ReceivedItem>[
+    _ReceivedItem(
+      name: 'Nintendo Switch',
       phone: '088-888-8888',
-
-      status: 'เตรียมจัดส่ง',
-      imageUrl: 'https://picsum.photos/seed/noodle/200',
+      status: '[1] รอไปรับสินค้า',
+      imageUrl: 'https://picsum.photos/seed/switch1/200',
     ),
-    _SentItem(
-      name: 'ไข่ไก่',
-      phone: '083-333-3333',
-
-      status: '[1] กำลังจัดส่งสินค้า',
-      imageUrl: 'https://picsum.photos/seed/egg/200',
+    _ReceivedItem(
+      name: 'Nintendo Switch',
+      phone: '088-888-8888',
+      status: '[1] รอไปรับสินค้า',
+      imageUrl: 'https://picsum.photos/seed/switch2/200',
+    ),
+    _ReceivedItem(
+      name: 'Nintendo Switch',
+      phone: '088-888-8888',
+      status: '[1] รอไปรับสินค้า',
+      imageUrl: 'https://picsum.photos/seed/switch3/200',
     ),
   ];
 
@@ -48,52 +45,42 @@ class _SentItemsPageState extends State<SentItemsPage> {
     return Scaffold(
       backgroundColor: bg,
       appBar: AppBar(
-        automaticallyImplyLeading: false,
+        automaticallyImplyLeading: false, // ซ่อนปุ่มย้อนกลับ
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title: const Text(
-          'รายการสินค้าที่ส่ง',
-          style: TextStyle(fontWeight: FontWeight.w800),
-        ),
+        title: const Text('รายการสินค้าที่ได้รับ',
+            style: TextStyle(fontWeight: FontWeight.w800)),
       ),
 
+      // ใช้ Stack เพื่อวางปุ่ม "แผนที่รวม" มุมขวาล่าง
       body: Stack(
         children: [
-          
           ListView.separated(
             padding: EdgeInsets.fromLTRB(
-              16,
-              8,
-              16,
-              16 + kBottomNavigationBarHeight,
+              16, 8, 16, 16 + kBottomNavigationBarHeight,
             ),
-            itemBuilder: (_, i) => _SentCard(item: _items[i]),
+            itemBuilder: (_, i) => _ReceivedCard(item: _items[i]),
             separatorBuilder: (_, __) => const SizedBox(height: 12),
             itemCount: _items.length,
           ),
 
-          
+          // ปุ่ม "แผนที่รวม" (ยังไม่ต้องมีความสามารถ)
           Positioned(
             right: 16,
-            bottom: 12 + kBottomNavigationBarHeight, // ลอยเหนือ bottom nav
+            bottom: 12 + kBottomNavigationBarHeight,
             child: SafeArea(
               child: SizedBox(
                 height: 32,
                 child: ElevatedButton.icon(
-                  onPressed: null, // ยังไม่ต้องมีความสามารถ
+                  onPressed: null,
                   icon: const Icon(Icons.map_outlined, size: 16),
-                  label: const Text(
-                    'แผนที่รวม',
-                    style: TextStyle(fontSize: 12),
-                  ),
+                  label: const Text('แผนที่รวม', style: TextStyle(fontSize: 12)),
                   style: ElevatedButton.styleFrom(
                     disabledBackgroundColor: Colors.grey.shade300,
                     disabledForegroundColor: Colors.black87,
                     elevation: 0,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 8,
-                    ),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),
@@ -105,7 +92,7 @@ class _SentItemsPageState extends State<SentItemsPage> {
         ],
       ),
 
-     bottomNavigationBar: BottomNavigationBar(
+      bottomNavigationBar: BottomNavigationBar(
         currentIndex: _navIndex,
         type: BottomNavigationBarType.fixed,
         selectedItemColor: Colors.black,
@@ -157,13 +144,12 @@ class _SentItemsPageState extends State<SentItemsPage> {
   }
 }
 
-class _SentItem {
+class _ReceivedItem {
   final String name;
   final String phone;
   final String status;
   final String imageUrl;
-
-  const _SentItem({
+  const _ReceivedItem({
     required this.name,
     required this.phone,
     required this.status,
@@ -171,10 +157,9 @@ class _SentItem {
   });
 }
 
-class _SentCard extends StatelessWidget {
-  const _SentCard({required this.item});
-
-  final _SentItem item;
+class _ReceivedCard extends StatelessWidget {
+  const _ReceivedCard({required this.item});
+  final _ReceivedItem item;
 
   @override
   Widget build(BuildContext context) {
@@ -213,44 +198,33 @@ class _SentCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  item.name,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
+                Text(item.name,
+                    style: const TextStyle(
+                        fontSize: 16, fontWeight: FontWeight.w700)),
                 const SizedBox(height: 4),
-                Text(
-                  'เบอร์ผู้รับ : ${item.phone}',
-                  style: const TextStyle(fontSize: 13.5),
-                ),
-
+                Text('เบอร์ผู้ส่ง : ${item.phone}',
+                    style: const TextStyle(fontSize: 13.5)),
                 const SizedBox(height: 2),
-                Text(
-                  'สถานะ : ${item.status}',
-                  style: const TextStyle(fontSize: 13.5),
-                ),
+                Text('สถานะสินค้า : ${item.status}',
+                    style: const TextStyle(fontSize: 13.5)),
               ],
             ),
           ),
 
-          // ปุ่มแผนที่ (ยังไม่ทำงาน)
+          // ปุ่ม "แผนที่" (ยังไม่ทำงาน)
           const SizedBox(width: 8),
           SizedBox(
             height: 32,
             child: ElevatedButton.icon(
-              onPressed: null, // ปิดการทำงานไว้ก่อนตามที่ขอ
+              onPressed: null,
               icon: const Icon(Icons.location_on_outlined, size: 16),
               label: const Text('แผนที่', style: TextStyle(fontSize: 12)),
               style: ElevatedButton.styleFrom(
                 disabledBackgroundColor: Colors.grey.shade300,
                 disabledForegroundColor: Colors.black87,
                 elevation: 0,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 8,
-                ),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
