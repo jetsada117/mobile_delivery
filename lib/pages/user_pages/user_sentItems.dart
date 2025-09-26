@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:mobile_delivery/pages/user_pages/user_ReceivedItems.dart';
 import 'package:mobile_delivery/pages/user_pages/user_home.dart';
 import 'package:mobile_delivery/pages/user_pages/user_profile.dart';
+import 'package:mobile_delivery/pages/user_pages/user_shipmentchat.dart';
 
 class SentItemsPage extends StatefulWidget {
   const SentItemsPage({super.key});
@@ -173,91 +174,83 @@ class _SentItem {
 
 class _SentCard extends StatelessWidget {
   const _SentCard({required this.item});
-
   final _SentItem item;
 
   @override
   Widget build(BuildContext context) {
     const borderCol = Color(0x55000000);
 
-    return Container(
-      decoration: BoxDecoration(
-        color: const Color(0xFFF4EBFF),
+    return Material( // <- ให้มีเอฟเฟกต์ ripple
+      color: Colors.transparent,
+      child: InkWell(
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: borderCol),
-      ),
-      padding: const EdgeInsets.all(12),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // รูปสินค้า
-          ClipRRect(
-            borderRadius: BorderRadius.circular(10),
-            child: Image.network(
-              item.imageUrl,
-              width: 64,
-              height: 64,
-              fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) => Container(
-                width: 64,
-                height: 64,
-                color: Colors.white,
-                child: const Icon(Icons.inventory_2, size: 32),
-              ),
-            ),
+        onTap: () {
+          // ไปหน้าแชต (จะส่งชื่อสินค้าตามไปด้วยก็ได้)
+          Get.to(() => const ShipmentChatPage());
+          // หรือถ้าหน้าแชตรับพารามิเตอร์:
+          // Get.to(() => ShipmentChatPage(title: item.name));
+        },
+        child: Container(
+          decoration: BoxDecoration(
+            color: const Color(0xFFF4EBFF),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: borderCol),
           ),
-          const SizedBox(width: 12),
-
-          // รายละเอียด
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  item.name,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
+          padding: const EdgeInsets.all(12),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(10),
+                child: Image.network(
+                  item.imageUrl,
+                  width: 64,
+                  height: 64,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => Container(
+                    width: 64, height: 64, color: Colors.white,
+                    child: const Icon(Icons.inventory_2, size: 32),
                   ),
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  'เบอร์ผู้รับ : ${item.phone}',
-                  style: const TextStyle(fontSize: 13.5),
-                ),
-
-                const SizedBox(height: 2),
-                Text(
-                  'สถานะ : ${item.status}',
-                  style: const TextStyle(fontSize: 13.5),
-                ),
-              ],
-            ),
-          ),
-
-          // ปุ่มแผนที่ (ยังไม่ทำงาน)
-          const SizedBox(width: 8),
-          SizedBox(
-            height: 32,
-            child: ElevatedButton.icon(
-              onPressed: null, // ปิดการทำงานไว้ก่อนตามที่ขอ
-              icon: const Icon(Icons.location_on_outlined, size: 16),
-              label: const Text('แผนที่', style: TextStyle(fontSize: 12)),
-              style: ElevatedButton.styleFrom(
-                disabledBackgroundColor: Colors.grey.shade300,
-                disabledForegroundColor: Colors.black87,
-                elevation: 0,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 8,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(item.name,
+                        style: const TextStyle(
+                          fontSize: 16, fontWeight: FontWeight.w700)),
+                    const SizedBox(height: 4),
+                    Text('เบอร์ผู้รับ : ${item.phone}',
+                        style: const TextStyle(fontSize: 13.5)),
+                    const SizedBox(height: 2),
+                    Text('สถานะ : ${item.status}',
+                        style: const TextStyle(fontSize: 13.5)),
+                  ],
                 ),
               ),
-            ),
+              const SizedBox(width: 8),
+              SizedBox(
+                height: 32,
+                child: ElevatedButton.icon(
+                  onPressed: null,
+                  icon: const Icon(Icons.location_on_outlined, size: 16),
+                  label: const Text('แผนที่', style: TextStyle(fontSize: 12)),
+                  style: ElevatedButton.styleFrom(
+                    disabledBackgroundColor: Colors.grey.shade300,
+                    disabledForegroundColor: Colors.black87,
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10, vertical: 8),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8)),
+                  ),
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
