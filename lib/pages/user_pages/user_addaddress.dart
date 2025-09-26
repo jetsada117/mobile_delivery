@@ -9,7 +9,6 @@ class AddAddressPage extends StatefulWidget {
 }
 
 class _AddAddressPageState extends State<AddAddressPage> {
-  // โทนสีเดียวกับทั้งแอป
   static const bg = Color(0xFFD2C2F1);
   static const cardBg = Color(0xFFF4EBFF);
   static const borderCol = Color(0x55000000);
@@ -30,7 +29,10 @@ class _AddAddressPageState extends State<AddAddressPage> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title: const Text('เพิ่มที่อยู่ใหม่', style: TextStyle(fontWeight: FontWeight.w800)),
+        title: const Text(
+          'เพิ่มที่อยู่ใหม่',
+          style: TextStyle(fontWeight: FontWeight.w800),
+        ),
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -48,11 +50,13 @@ class _AddAddressPageState extends State<AddAddressPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    const Text('ที่อยู่',
-                        style: TextStyle(
-                          color: linkBlue,
-                          fontWeight: FontWeight.w800,
-                        )),
+                    const Text(
+                      'ที่อยู่',
+                      style: TextStyle(
+                        color: linkBlue,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
                     const SizedBox(height: 8),
 
                     // กล่องกรอกที่อยู่ (หลายบรรทัด)
@@ -65,8 +69,10 @@ class _AddAddressPageState extends State<AddAddressPage> {
                         isDense: true,
                         filled: true,
                         fillColor: Colors.white,
-                        contentPadding:
-                            const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 12,
+                        ),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(10),
                         ),

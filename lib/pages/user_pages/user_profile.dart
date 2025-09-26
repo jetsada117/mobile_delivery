@@ -2,11 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:mobile_delivery/pages/user_pages/user_addaddress.dart';
 import 'package:mobile_delivery/pages/user_pages/user_editaddress.dart';
-
-// เปลี่ยน import ให้ตรงกับโปรเจกต์ของคุณ
 import 'package:mobile_delivery/pages/user_pages/user_home.dart';
 import 'package:mobile_delivery/pages/user_pages/user_createparcel.dart';
-import 'package:mobile_delivery/pages/user_pages/user_sendparcel.dart'; // ถ้ามี
 
 class UserProfilePage extends StatefulWidget {
   const UserProfilePage({super.key});
@@ -16,7 +13,6 @@ class UserProfilePage extends StatefulWidget {
 }
 
 class _UserProfilePageState extends State<UserProfilePage> {
-  // โทนสี
   static const bg = Color(0xFFD2C2F1);
   static const cardBg = Color(0xFFF4EBFF);
   static const borderCol = Color(0x55000000);

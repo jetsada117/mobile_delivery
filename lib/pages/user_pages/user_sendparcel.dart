@@ -11,7 +11,6 @@ class SendParcelPage extends StatefulWidget {
 }
 
 class _SendParcelPageState extends State<SendParcelPage> {
-  // สีตามดีไซน์
   static const bg = Color(0xFFD2C2F1);
   static const cardBg = Color(0xFFF4EBFF);
   static const innerCard = Color(0xFFC9A9F5);

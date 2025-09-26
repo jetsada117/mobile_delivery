@@ -10,7 +10,6 @@ class EditAddressPage extends StatefulWidget {
 }
 
 class _EditAddressPageState extends State<EditAddressPage> {
-  // โทนสีให้ตรงกับทั้งแอป
   static const bg = Color(0xFFD2C2F1);
   static const cardBg = Color(0xFFF4EBFF);
   static const borderCol = Color(0x55000000);
@@ -37,7 +36,10 @@ class _EditAddressPageState extends State<EditAddressPage> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title: const Text('แก้ไขที่อยู่', style: TextStyle(fontWeight: FontWeight.w800)),
+        title: const Text(
+          'แก้ไขที่อยู่',
+          style: TextStyle(fontWeight: FontWeight.w800),
+        ),
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -55,11 +57,13 @@ class _EditAddressPageState extends State<EditAddressPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    const Text('ที่อยู่',
-                        style: TextStyle(
-                          color: linkBlue,
-                          fontWeight: FontWeight.w800,
-                        )),
+                    const Text(
+                      'ที่อยู่',
+                      style: TextStyle(
+                        color: linkBlue,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
                     const SizedBox(height: 8),
 
                     // กล่องที่อยู่ (หลายบรรทัด)
