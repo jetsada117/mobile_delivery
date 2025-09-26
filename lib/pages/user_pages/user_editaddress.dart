@@ -129,10 +129,7 @@ class _EditAddressPageState extends State<EditAddressPage> {
                         const SizedBox(width: 12),
                         Expanded(
                           child: ElevatedButton(
-                            onPressed: () {
-                              // ส่งที่อยู่กลับไปหน้าโปรไฟล์
-                              Get.back(result: _addrCtrl.text.trim());
-                            },
+                             onPressed: () => Get.back(),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.black87,
                               foregroundColor: Colors.white,

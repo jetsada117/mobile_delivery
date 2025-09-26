@@ -122,12 +122,7 @@ class _AddAddressPageState extends State<AddAddressPage> {
                         const SizedBox(width: 12),
                         Expanded(
                           child: ElevatedButton(
-                            onPressed: () {
-                              final addr = _addrCtrl.text.trim();
-                              if (addr.isEmpty) return;
-                              // ส่งค่าที่อยู่กลับไปหน้าโปรไฟล์
-                              Get.back(result: addr);
-                            },
+                            onPressed: () => Get.back(),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.black87,
                               foregroundColor: Colors.white,

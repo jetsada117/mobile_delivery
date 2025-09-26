@@ -4,6 +4,7 @@ import 'package:mobile_delivery/pages/user_pages/user_addaddress.dart';
 import 'package:mobile_delivery/pages/user_pages/user_editaddress.dart';
 import 'package:mobile_delivery/pages/user_pages/user_home.dart';
 import 'package:mobile_delivery/pages/user_pages/user_createparcel.dart';
+import 'package:mobile_delivery/pages/user_pages/user_sentItems.dart';
 
 class UserProfilePage extends StatefulWidget {
   const UserProfilePage({super.key});
@@ -52,8 +53,9 @@ class _UserProfilePageState extends State<UserProfilePage> {
     return Scaffold(
       backgroundColor: bg,
       appBar: AppBar(
-        elevation: 0,
+        automaticallyImplyLeading: false, // << ซ่อนลูกศรกลับ
         backgroundColor: Colors.transparent,
+        elevation: 0,
         title: const Text(
           'โปรไฟล์',
           style: TextStyle(fontWeight: FontWeight.w800),
@@ -173,7 +175,6 @@ class _UserProfilePageState extends State<UserProfilePage> {
         ),
       ),
 
-      // Bottom Navigation
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _navIndex,
         type: BottomNavigationBarType.fixed,
@@ -181,22 +182,22 @@ class _UserProfilePageState extends State<UserProfilePage> {
         unselectedItemColor: Colors.black54,
         backgroundColor: cardBg,
         onTap: (i) {
-          switch (i) {
-            case 0:
-              Get.off(() => const UserHomePage());
-              return;
-            case 1:
-              // ไปหน้าสินค้าที่ส่ง/สร้างพัสดุ แล้วแต่ที่คุณตั้ง
-              Get.off(() => const CreateParcelPage());
-              return;
-            case 2:
-              // TODO: ไปหน้าสินค้าที่ได้รับ (ถ้ามี)
-              // Get.off(() => const ReceivedPage());
-              return;
-            case 3:
-              // หน้าปัจจุบัน
-              return;
+          if (i == 0) {
+            // ไปหน้า "หน้าหลัก" และแทนหน้าปัจจุบัน
+            Get.off(() => const UserHomePage());
+            return;
           }
+          if (i == 1) {
+            // ไปหน้า "หน้าหลัก" และแทนหน้าปัจจุบัน
+            Get.off(() => const SentItemsPage());
+            return;
+          }
+          if (i == 3) {
+            // ไปหน้า "หน้าหลัก" และแทนหน้าปัจจุบัน
+            Get.off(() => const UserProfilePage());
+            return;
+          }
+          setState(() => _navIndex = i);
         },
         items: const [
           BottomNavigationBarItem(
