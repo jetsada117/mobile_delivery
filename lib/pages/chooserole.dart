@@ -13,16 +13,16 @@ class ChooseRole extends StatefulWidget {
 class _ChooseRoleState extends State<ChooseRole> {
   @override
   Widget build(BuildContext context) {
-    const bg = Color(0xFFD2C2F1); // ม่วงอ่อนพื้นหลัง
-    const cardBg = Color(0xFFF4EBFF); // พื้นในการ์ด
-    const pill = Color(0xFFC9A9F5); // ม่วงอ่อนของปุ่ม User/Rider
+    const bg = Color(0xFFD2C2F1);
+    const cardBg = Color(0xFFF4EBFF);
+    const pill = Color(0xFFC9A9F5);
 
     return Scaffold(
       backgroundColor: bg,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        toolbarHeight: 0, // ให้หน้าคลีนแบบภาพ
+        toolbarHeight: 0,
       ),
       body: SafeArea(
         child: SingleChildScrollView(
