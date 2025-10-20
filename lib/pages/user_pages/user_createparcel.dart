@@ -13,12 +13,10 @@ class CreateParcelPage extends StatefulWidget {
 }
 
 class _CreateParcelPageState extends State<CreateParcelPage> {
-  // Controllers
   final _name = TextEditingController();
   final _addr1 = TextEditingController(text: 'บ้านเลขที่ 111');
   final _addr2 = TextEditingController(text: 'บ้านเลขที่ 222');
 
-  // Image
   final _picker = ImagePicker();
   XFile? _image;
 
