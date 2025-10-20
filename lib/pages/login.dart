@@ -1,11 +1,13 @@
 import 'dart:developer';
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:mobile_delivery/models/user_data.dart';
 import 'package:mobile_delivery/pages/chooserole.dart';
 import 'package:mobile_delivery/pages/rider_pages/rider_home.dart';
 import 'package:mobile_delivery/pages/user_pages/user_home.dart';
+import 'package:mobile_delivery/providers/auth_provider.dart';
+import 'package:provider/provider.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -224,14 +226,16 @@ class _LoginPageState extends State<LoginPage> {
           .get();
 
       if (userSnap.docs.isNotEmpty) {
-        final userData = userSnap.docs.first.data();
+        final doc = userSnap.docs.first;
+        final data = doc.data();
+        log("Login success as Rider: $data");
 
-        final username = userData['name'];
-        final imageUrl = userData['user_image'];
+        final user = UserData.fromMap(doc.id, data);
+        context.read<AuthProvider>().setUser(user);
 
-        Get.snackbar("สำเร็จ", "เข้าสู่ระบบในฐานะ User");
+        Get.snackbar("สำเร็จ", "เข้าสู่ระบบในฐานะผู้ใช้ระบบ");
 
-        Get.to(() => UserHomePage(username: username, imageUrl: imageUrl));
+        Get.to(() => UserHomePage());
         return;
       }
 

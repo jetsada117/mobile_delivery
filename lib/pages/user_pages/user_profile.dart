@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:mobile_delivery/pages/login.dart';
 import 'package:mobile_delivery/pages/user_pages/user_ReceivedItems.dart';
 import 'package:mobile_delivery/pages/user_pages/user_addaddress.dart';
 import 'package:mobile_delivery/pages/user_pages/user_editaddress.dart';
 import 'package:mobile_delivery/pages/user_pages/user_home.dart';
 import 'package:mobile_delivery/pages/user_pages/user_sentItems.dart';
+import 'package:mobile_delivery/providers/auth_provider.dart';
+import 'package:provider/provider.dart';
 
 class UserProfilePage extends StatefulWidget {
   const UserProfilePage({super.key});
@@ -19,17 +22,13 @@ class _UserProfilePageState extends State<UserProfilePage> {
   static const borderCol = Color(0x55000000);
   static const linkBlue = Color(0xFF2D72FF);
 
-  final String _name = 'นายทดสอบ อินทร์ศักดา';
-  final String _phone = '061-279-4147';
-  final String _avatarUrl = 'https://i.pravatar.cc/160?img=23';
-
   final List<TextEditingController> _addresses = [
     TextEditingController(text: 'บ้านเลขที่111'),
     TextEditingController(text: 'บ้านเลขที่222'),
   ];
   final List<bool> _editing = [false, false];
 
-  int _navIndex = 3; // โปรไฟล์
+  int _navIndex = 3;
 
   @override
   void dispose() {
@@ -48,10 +47,17 @@ class _UserProfilePageState extends State<UserProfilePage> {
 
   @override
   Widget build(BuildContext context) {
+    final auth = context.watch<AuthProvider>();
+    final user = auth.currentUser;
+
+    final displayName = user?.name;
+    final phone = user?.phone;
+    final avatarUrl = user?.imageUrl;
+
     return Scaffold(
       backgroundColor: bg,
       appBar: AppBar(
-        automaticallyImplyLeading: false, // << ซ่อนลูกศรกลับ
+        automaticallyImplyLeading: false,
         backgroundColor: Colors.transparent,
         elevation: 0,
         title: const Text(
@@ -73,7 +79,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(999),
                     child: Image.network(
-                      _avatarUrl,
+                      avatarUrl!,
                       width: 96,
                       height: 96,
                       fit: BoxFit.cover,
@@ -107,11 +113,11 @@ class _UserProfilePageState extends State<UserProfilePage> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'ชื่อ : $_name',
+                      'ชื่อ : $displayName',
                       style: const TextStyle(fontWeight: FontWeight.w600),
                     ),
                     const SizedBox(height: 4),
-                    Text('เบอร์โทร : $_phone'),
+                    Text('เบอร์โทร : $phone'),
                   ],
                 ),
               ),
@@ -136,7 +142,22 @@ class _UserProfilePageState extends State<UserProfilePage> {
 
               Row(
                 children: [
-                  const Spacer(),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () => _onLogout(context),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red,
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                      child: const Text('ออกจากระบบ'),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
                   ElevatedButton.icon(
                     icon: const Icon(Icons.add, size: 18),
                     label: const Text(' เพิ่มที่อยู่'),
@@ -293,5 +314,33 @@ class _UserProfilePageState extends State<UserProfilePage> {
         ],
       ),
     );
+  }
+
+  Future<void> _onLogout(BuildContext context) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('ยืนยันการออกจากระบบ'),
+        content: const Text('คุณต้องการออกจากระบบใช่หรือไม่?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('ยกเลิก'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('ออกจากระบบ'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
+    if (context.mounted) {
+      context.read<AuthProvider>().clear();
+    }
+
+    Get.offAll(() => const LoginPage());
   }
 }

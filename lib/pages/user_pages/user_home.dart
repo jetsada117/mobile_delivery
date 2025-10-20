@@ -5,12 +5,11 @@ import 'package:mobile_delivery/pages/user_pages/user_ReceivedItems.dart';
 import 'package:mobile_delivery/pages/user_pages/user_createparcel.dart';
 import 'package:mobile_delivery/pages/user_pages/user_profile.dart';
 import 'package:mobile_delivery/pages/user_pages/user_sentItems.dart';
+import 'package:mobile_delivery/providers/auth_provider.dart';
+import 'package:provider/provider.dart';
 
 class UserHomePage extends StatefulWidget {
-  final String username;
-  final String imageUrl;
-
-  const UserHomePage({super.key, this.username = 'ผู้ใช้', this.imageUrl = ''});
+  const UserHomePage({super.key});
 
   @override
   State<UserHomePage> createState() => _UserHomePageState();
@@ -37,10 +36,15 @@ class _UserHomePageState extends State<UserHomePage> {
 
   @override
   Widget build(BuildContext context) {
-    // โทนสีให้ใกล้ภาพตัวอย่าง
     const bg = Color(0xFFD2C2F1);
     const cardBg = Color(0xFFF4EBFF);
     const borderCol = Color(0x55000000);
+
+    final auth = context.watch<AuthProvider>();
+    final user = auth.currentUser;
+
+    final displayName = user?.name;
+    final avatarUrl = user?.imageUrl;
 
     return Scaffold(
       backgroundColor: bg,
@@ -60,7 +64,7 @@ class _UserHomePageState extends State<UserHomePage> {
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(999),
                         child: Image.network(
-                          widget.imageUrl,
+                          avatarUrl!,
                           errorBuilder: (c, e, s) => const Icon(Icons.person),
                         ),
                       ),
@@ -68,7 +72,7 @@ class _UserHomePageState extends State<UserHomePage> {
                   ),
                   const SizedBox(width: 12),
                   Text(
-                    'สวัสดี, ${widget.username}',
+                    'สวัสดี, $displayName',
                     style: const TextStyle(
                       fontSize: 22,
                       fontWeight: FontWeight.w700,
