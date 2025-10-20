@@ -298,12 +298,12 @@ class _UserProfilePageState extends State<UserProfilePage> {
                 tooltip: 'ลบ',
                 icon: const Icon(Icons.delete_outline),
                 onPressed: () async {
-                  await FirebaseFirestore.instance
-                      .collection('users')
-                      .doc(uid)
-                      .collection('addresses')
-                      .doc(addr.id)
-                      .delete();
+                  await _confirmDeleteAddress(
+                    context,
+                    uid,
+                    addr.id,
+                    addr.address,
+                  );
                 },
               ),
             ],
@@ -337,5 +337,53 @@ class _UserProfilePageState extends State<UserProfilePage> {
         ],
       ),
     );
+  }
+
+  Future<void> _confirmDeleteAddress(
+    BuildContext context,
+    String uid,
+    String addressId,
+    String addressText,
+  ) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('ยืนยันการลบที่อยู่'),
+        content: Text('คุณต้องการลบที่อยู่นี้หรือไม่?\n\n$addressText'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('ยกเลิก'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('ลบ'),
+          ),
+        ],
+      ),
+    );
+
+    if (ok != true) return;
+
+    try {
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(uid)
+          .collection('addresses')
+          .doc(addressId)
+          .delete();
+
+      Get.snackbar(
+        'สำเร็จ',
+        'ลบที่อยู่เรียบร้อยแล้ว',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    } catch (e) {
+      Get.snackbar(
+        'ผิดพลาด',
+        'ลบที่อยู่ไม่สำเร็จ: $e',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    }
   }
 }

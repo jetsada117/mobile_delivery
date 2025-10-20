@@ -21,9 +21,9 @@ class _SendParcelPageState extends State<SendParcelPage> {
   final _addr1 = TextEditingController(text: 'บ้านเลขที่111');
   final _addr2 = TextEditingController(text: 'บ้านเลขที่222');
 
-  int _navIndex = 1; // แถบ “สินค้าที่ส่ง”
-  int? _selectedAddr; // 1/2
-  _Recipient? _recipient; // null = ยังไม่ค้น/ไม่พบ
+  int _navIndex = 1;
+  int? _selectedAddr;
+  _Recipient? _recipient;
 
   @override
   void dispose() {
