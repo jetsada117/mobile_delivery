@@ -13,10 +13,8 @@ class ReceivedItemsPage extends StatefulWidget {
 }
 
 class _ReceivedItemsPageState extends State<ReceivedItemsPage> {
-  // โทนสีโปรเจ็กต์
   static const bg = Color(0xFFD2C2F1);
   static const cardBg = Color(0xFFF4EBFF);
-  static const borderCol = Color(0x55000000);
 
   int _navIndex = 2; // แท็บ "สินค้าที่ได้รับ"
 
