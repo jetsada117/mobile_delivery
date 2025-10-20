@@ -8,7 +8,9 @@ import 'package:mobile_delivery/pages/user_pages/user_sentItems.dart';
 
 class UserHomePage extends StatefulWidget {
   final String username;
-  const UserHomePage({super.key, this.username = 'ผู้ใช้'});
+  final String imageUrl;
+
+  const UserHomePage({super.key, this.username = 'ผู้ใช้', this.imageUrl = ''});
 
   @override
   State<UserHomePage> createState() => _UserHomePageState();
@@ -18,7 +20,6 @@ class _UserHomePageState extends State<UserHomePage> {
   int _navIndex = 0;
   final _search = TextEditingController();
 
-  // ตัวอย่างข้อมูลสินค้า
   final _items = const [
     _Product(
       name: 'ปลากระป๋อง',
@@ -59,7 +60,7 @@ class _UserHomePageState extends State<UserHomePage> {
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(999),
                         child: Image.network(
-                          'https://i.pravatar.cc/100?img=12',
+                          widget.imageUrl,
                           errorBuilder: (c, e, s) => const Icon(Icons.person),
                         ),
                       ),
@@ -158,12 +159,12 @@ class _UserHomePageState extends State<UserHomePage> {
             Get.off(() => const SentItemsPage());
             return;
           }
-           if (i == 2) {
+          if (i == 2) {
             // ไปหน้า "หน้าหลัก" และแทนหน้าปัจจุบัน
             Get.off(() => const ReceivedItemsPage());
             return;
           }
-           if (i == 3) {
+          if (i == 3) {
             // ไปหน้า "หน้าหลัก" และแทนหน้าปัจจุบัน
             Get.off(() => const UserProfilePage());
             return;

@@ -199,7 +199,6 @@ class _LoginPageState extends State<LoginPage> {
     }
 
     try {
-      // 🔎 1) เช็คใน rider ก่อน
       final riderSnap = await FirebaseFirestore.instance
           .collection('riders')
           .where('phone', isEqualTo: phone)
@@ -212,12 +211,11 @@ class _LoginPageState extends State<LoginPage> {
         log("Login success as Rider: $riderData");
 
         Get.snackbar("สำเร็จ", "เข้าสู่ระบบในฐานะ Rider");
-        // 👉 ไปหน้า RiderHomePage
+
         Get.to(() => const RiderHomePage());
         return;
       }
 
-      // 🔎 2) ถ้าไม่เจอใน rider → เช็คใน user
       final userSnap = await FirebaseFirestore.instance
           .collection('users')
           .where('phone', isEqualTo: phone)
@@ -227,15 +225,16 @@ class _LoginPageState extends State<LoginPage> {
 
       if (userSnap.docs.isNotEmpty) {
         final userData = userSnap.docs.first.data();
-        log("Login success as User: $userData");
+
+        final username = userData['name'];
+        final imageUrl = userData['user_image'];
 
         Get.snackbar("สำเร็จ", "เข้าสู่ระบบในฐานะ User");
-        // 👉 ไปหน้า UserHomePage
-        Get.to(() => const UserHomePage());
+
+        Get.to(() => UserHomePage(username: username, imageUrl: imageUrl));
         return;
       }
 
-      // ❌ ถ้าไม่เจอทั้งสอง collection
       _showError("เบอร์โทรศัพท์หรือรหัสผ่านไม่ถูกต้อง");
     } catch (e) {
       _showError("เกิดข้อผิดพลาด: $e");
