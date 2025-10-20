@@ -610,18 +610,16 @@ class _CreateParcelPageState extends State<CreateParcelPage> {
     final auth = context.read<AuthProvider>();
     final user = auth.currentUser;
 
-    if (user == null) {
-      Get.snackbar('ยังไม่ได้เข้าสู่ระบบ', 'กรุณาเข้าสู่ระบบก่อน');
-      return;
-    }
     if (_name.text.trim().isEmpty) {
       Get.snackbar('กรอกไม่ครบ', 'กรุณากรอกชื่อสินค้า');
       return;
     }
+
     if (_image == null) {
       Get.snackbar('ไม่มีรูปสินค้า', 'กรุณาเพิ่มรูปสินค้า');
       return;
     }
+
     if (_selectedAddressId == null) {
       Get.snackbar('ยังไม่ได้เลือกที่อยู่', 'กรุณาเลือกที่อยู่ผู้ส่ง');
       return;
@@ -635,7 +633,7 @@ class _CreateParcelPageState extends State<CreateParcelPage> {
 
       final sendAddressRef = db
           .collection('users')
-          .doc(user.uid)
+          .doc(user!.uid)
           .collection('addresses')
           .doc(_selectedAddressId);
 

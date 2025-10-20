@@ -1,6 +1,7 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:get/get_core/src/get_main.dart';
+import 'package:mobile_delivery/models/product_data.dart';
 import 'package:mobile_delivery/pages/user_pages/user_ReceivedItems.dart';
 import 'package:mobile_delivery/pages/user_pages/user_createparcel.dart';
 import 'package:mobile_delivery/pages/user_pages/user_profile.dart';
@@ -18,15 +19,6 @@ class UserHomePage extends StatefulWidget {
 class _UserHomePageState extends State<UserHomePage> {
   int _navIndex = 0;
   final _search = TextEditingController();
-
-  final _items = const [
-    _Product(
-      name: 'ปลากระป๋อง',
-      imageUrl: 'https://picsum.photos/seed/can/200',
-    ),
-    _Product(name: 'มาม่า', imageUrl: 'https://picsum.photos/seed/noodle/200'),
-    _Product(name: 'ไข่ไก่', imageUrl: 'https://picsum.photos/seed/egg/200'),
-  ];
 
   @override
   void dispose() {
@@ -108,8 +100,30 @@ class _UserHomePageState extends State<UserHomePage> {
               ),
               const SizedBox(height: 10),
 
-              ..._items.map((p) => _ProductCard(product: p)).toList(),
-              const SizedBox(height: 8),
+              StreamBuilder<List<Product>>(
+                stream: productsStream(),
+                builder: (context, snap) {
+                  if (snap.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+                  if (snap.hasError) {
+                    return const Text('โหลดสินค้าไม่สำเร็จ');
+                  }
+                  final items = snap.data ?? [];
+                  if (items.isEmpty) {
+                    return const Text('ยังไม่มีสินค้า');
+                  }
+
+                  return ListView.separated(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: items.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 8),
+                    itemBuilder: (_, i) =>
+                        _ProductCardFromModel(product: items[i]),
+                  );
+                },
+              ),
             ],
           ),
         ),
@@ -174,24 +188,25 @@ class _UserHomePageState extends State<UserHomePage> {
       ),
     );
   }
+
+  Stream<List<Product>> productsStream() {
+    return FirebaseFirestore.instance
+        .collection('products')
+        .orderBy('product_id', descending: true)
+        .snapshots()
+        .map((q) => q.docs.map(Product.fromDoc).toList());
+  }
 }
 
-class _Product {
-  final String name;
-  final String imageUrl;
-  const _Product({required this.name, required this.imageUrl});
-}
-
-class _ProductCard extends StatelessWidget {
-  final _Product product;
-  const _ProductCard({required this.product});
+class _ProductCardFromModel extends StatelessWidget {
+  final Product product;
+  const _ProductCardFromModel({required this.product});
 
   @override
   Widget build(BuildContext context) {
     const borderCol = Color(0x55000000);
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
         color: const Color(0xFFF4EBFF),
         borderRadius: BorderRadius.circular(12),
@@ -211,7 +226,7 @@ class _ProductCard extends StatelessWidget {
                 width: 64,
                 height: 64,
                 fit: BoxFit.cover,
-                errorBuilder: (c, e, s) => Container(
+                errorBuilder: (_, __, ___) => Container(
                   width: 64,
                   height: 64,
                   color: Colors.white,
@@ -221,12 +236,18 @@ class _ProductCard extends StatelessWidget {
             ),
             const SizedBox(width: 14),
             Expanded(
-              child: Text(
-                product.name,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    product.name.isEmpty ? '(ไม่มีชื่อสินค้า)' : product.name,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                ],
               ),
             ),
           ],
