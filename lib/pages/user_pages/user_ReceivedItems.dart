@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:latlong2/latlong.dart';
+import 'package:mobile_delivery/pages/user_pages/user_combined_map.dart';
 import 'package:mobile_delivery/pages/user_pages/user_home.dart';
 import 'package:mobile_delivery/pages/user_pages/user_profile.dart';
 import 'package:mobile_delivery/pages/user_pages/user_receivedstatus.dart';
+import 'package:mobile_delivery/pages/user_pages/user_rider_map.dart';
 import 'package:mobile_delivery/pages/user_pages/user_sentItems.dart';
 
 class ReceivedItemsPage extends StatefulWidget {
@@ -72,23 +75,41 @@ class _ReceivedItemsPageState extends State<ReceivedItemsPage> {
           ),
 
           // ปุ่ม "แผนที่รวม" (ยังไม่ต้องมีความสามารถ)
-          Positioned(
+               Positioned(
             right: 16,
             bottom: 12 + kBottomNavigationBarHeight,
             child: SafeArea(
               child: SizedBox(
                 height: 32,
                 child: ElevatedButton.icon(
-                  onPressed: null,
+                  onPressed: () {
+                    // ตัวอย่างพิกัดหลายจุด (แก้เป็นของจริงได้)
+                    final points = <LatLng>[
+                      const LatLng(16.2448, 103.2520),
+                      const LatLng(16.2380, 103.2425),
+                      const LatLng(16.2325, 103.2580),
+                    ];
+
+                    Get.to(
+                      () => CombinedMapPage(
+                        points: points,
+                        riderName: 'นายสมชาย เดลิเวอรี่',
+                        statusText: '[3]',
+                        phone: '012-345-6789',
+                        plate: '8กพ 877',
+                        avatarUrl: 'https://i.pravatar.cc/100?img=15',
+                      ),
+                    );
+                  },
                   icon: const Icon(Icons.map_outlined, size: 16),
                   label: const Text(
                     'แผนที่รวม',
                     style: TextStyle(fontSize: 12),
                   ),
                   style: ElevatedButton.styleFrom(
-                    disabledBackgroundColor: Colors.grey.shade300,
-                    disabledForegroundColor: Colors.black87,
                     elevation: 0,
+                    backgroundColor: Colors.black87,
+                    foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(
                       horizontal: 10,
                       vertical: 8,
@@ -238,10 +259,23 @@ class _ReceivedCard extends StatelessWidget {
             const SizedBox(width: 8),
 
             // ปุ่มแผนที่ (ยังไม่ทำงาน)
-            SizedBox(
+               SizedBox(
               height: 32,
               child: ElevatedButton.icon(
-                onPressed: null,
+                onPressed: () {
+                  // ค่า lat/lng ตัวอย่าง: มมส (ปรับแก้ได้ตามจริง)
+                  Get.to(
+                    () => RiderMapPage(
+                      latLng: const LatLng(16.2458, 103.2500),
+                      riderName: 'นายสมชาย เดลิเวอรี่',
+                      statusText: item.status, // ใช้สถานะจากการ์ด
+                      phone: '012-345-6789',
+                      plate: '8กพ 877',
+                      avatarUrl: item
+                          .imageUrl, // ใช้รูปสินค้าหรือเปลี่ยนเป็นรูปไรเดอร์จริง
+                    ),
+                  );
+                },
                 icon: const Icon(Icons.location_on_outlined, size: 16),
                 label: const Text('แผนที่', style: TextStyle(fontSize: 12)),
                 style: ElevatedButton.styleFrom(
