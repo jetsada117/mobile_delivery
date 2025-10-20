@@ -645,7 +645,7 @@ class _CreateParcelPageState extends State<CreateParcelPage> {
         'send_at': sendAddressRef,
         'receive_at': null,
         'is_active': true,
-        'current_status': 'created',
+        'current_status': 1,
       };
       await db.collection('orders').doc(newOrderId.toString()).set(orderData);
 
