@@ -34,7 +34,6 @@ class _SendParcelPageState extends State<SendParcelPage> {
   }
 
   void _mockSearch() {
-    // ตัวอย่างข้อมูลจำลองเมื่อกดค้นหา
     setState(() {
       _recipient = const _Recipient(
         name: 'นายสมชาย',

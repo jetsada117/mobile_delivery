@@ -82,7 +82,6 @@ class _UserHomePageState extends State<UserHomePage> {
               ),
               const SizedBox(height: 12),
 
-              // ช่องค้นหา
               TextField(
                 controller: _search,
                 decoration: InputDecoration(
@@ -109,43 +108,26 @@ class _UserHomePageState extends State<UserHomePage> {
               ),
               const SizedBox(height: 10),
 
-              // รายการสินค้า (การ์ด)
               ..._items.map((p) => _ProductCard(product: p)).toList(),
               const SizedBox(height: 8),
-
-              // ปุ่มสร้างสินค้า (ชิดขวา)
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  SizedBox(
-                    height: 36,
-                    child: ElevatedButton(
-                      onPressed: () {
-                        Navigator.of(context).pushReplacement(
-                          MaterialPageRoute(
-                            builder: (_) => const CreateParcelPage(),
-                          ),
-                        );
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.black,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        elevation: 0,
-                      ),
-                      child: const Text('สร้างสินค้า'),
-                    ),
-                  ),
-                ],
-              ),
             ],
           ),
         ),
       ),
 
-      // Bottom Navigation
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (_) => const CreateParcelPage()),
+          );
+        },
+        backgroundColor: Colors.black,
+        foregroundColor: Colors.white,
+        icon: const Icon(Icons.add_box_outlined),
+        label: const Text('สร้างสินค้า'),
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _navIndex,
         type: BottomNavigationBarType.fixed,
@@ -154,22 +136,18 @@ class _UserHomePageState extends State<UserHomePage> {
         backgroundColor: cardBg,
         onTap: (i) {
           if (i == 0) {
-            // ไปหน้า "หน้าหลัก" และแทนหน้าปัจจุบัน
             Get.off(() => const UserHomePage());
             return;
           }
           if (i == 1) {
-            // ไปหน้า "หน้าหลัก" และแทนหน้าปัจจุบัน
             Get.off(() => const SentItemsPage());
             return;
           }
           if (i == 2) {
-            // ไปหน้า "หน้าหลัก" และแทนหน้าปัจจุบัน
             Get.off(() => const ReceivedItemsPage());
             return;
           }
           if (i == 3) {
-            // ไปหน้า "หน้าหลัก" และแทนหน้าปัจจุบัน
             Get.off(() => const UserProfilePage());
             return;
           }
@@ -217,10 +195,8 @@ class _ProductCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: const Color(0xFFF4EBFF),
         borderRadius: BorderRadius.circular(12),
-        // border: const BorderSide(color: borderCol).toPaint(),
       ),
       child: Container(
-        // ใช้ Container ซ้อนเพื่อให้ Border ดูชัด
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: borderCol),

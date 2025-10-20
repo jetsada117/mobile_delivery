@@ -13,10 +13,8 @@ class SentItemsPage extends StatefulWidget {
 }
 
 class _SentItemsPageState extends State<SentItemsPage> {
-  // โทนสีเดียวกับโปรเจ็กต์
   static const bg = Color(0xFFD2C2F1);
   static const cardBg = Color(0xFFF4EBFF);
-  static const borderCol = Color(0x55000000);
 
   int _navIndex = 1; // แท็บ "สินค้าที่ส่ง"
 
@@ -60,7 +58,6 @@ class _SentItemsPageState extends State<SentItemsPage> {
 
       body: Stack(
         children: [
-          
           ListView.separated(
             padding: EdgeInsets.fromLTRB(
               16,
@@ -73,7 +70,6 @@ class _SentItemsPageState extends State<SentItemsPage> {
             itemCount: _items.length,
           ),
 
-          
           Positioned(
             right: 16,
             bottom: 12 + kBottomNavigationBarHeight, // ลอยเหนือ bottom nav
@@ -106,7 +102,7 @@ class _SentItemsPageState extends State<SentItemsPage> {
         ],
       ),
 
-     bottomNavigationBar: BottomNavigationBar(
+      bottomNavigationBar: BottomNavigationBar(
         currentIndex: _navIndex,
         type: BottomNavigationBarType.fixed,
         selectedItemColor: Colors.black,
@@ -123,12 +119,12 @@ class _SentItemsPageState extends State<SentItemsPage> {
             Get.off(() => const SentItemsPage());
             return;
           }
-           if (i == 2) {
+          if (i == 2) {
             // ไปหน้า "หน้าหลัก" และแทนหน้าปัจจุบัน
             Get.off(() => const ReceivedItemsPage());
             return;
           }
-           if (i == 3) {
+          if (i == 3) {
             // ไปหน้า "หน้าหลัก" และแทนหน้าปัจจุบัน
             Get.off(() => const UserProfilePage());
             return;
@@ -180,7 +176,8 @@ class _SentCard extends StatelessWidget {
   Widget build(BuildContext context) {
     const borderCol = Color(0x55000000);
 
-    return Material( // <- ให้มีเอฟเฟกต์ ripple
+    return Material(
+      // <- ให้มีเอฟเฟกต์ ripple
       color: Colors.transparent,
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
@@ -208,7 +205,9 @@ class _SentCard extends StatelessWidget {
                   height: 64,
                   fit: BoxFit.cover,
                   errorBuilder: (_, __, ___) => Container(
-                    width: 64, height: 64, color: Colors.white,
+                    width: 64,
+                    height: 64,
+                    color: Colors.white,
                     child: const Icon(Icons.inventory_2, size: 32),
                   ),
                 ),
@@ -218,15 +217,23 @@ class _SentCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(item.name,
-                        style: const TextStyle(
-                          fontSize: 16, fontWeight: FontWeight.w700)),
+                    Text(
+                      item.name,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
                     const SizedBox(height: 4),
-                    Text('เบอร์ผู้รับ : ${item.phone}',
-                        style: const TextStyle(fontSize: 13.5)),
+                    Text(
+                      'เบอร์ผู้รับ : ${item.phone}',
+                      style: const TextStyle(fontSize: 13.5),
+                    ),
                     const SizedBox(height: 2),
-                    Text('สถานะ : ${item.status}',
-                        style: const TextStyle(fontSize: 13.5)),
+                    Text(
+                      'สถานะ : ${item.status}',
+                      style: const TextStyle(fontSize: 13.5),
+                    ),
                   ],
                 ),
               ),
@@ -242,9 +249,12 @@ class _SentCard extends StatelessWidget {
                     disabledForegroundColor: Colors.black87,
                     elevation: 0,
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 10, vertical: 8),
+                      horizontal: 10,
+                      vertical: 8,
+                    ),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8)),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
                   ),
                 ),
               ),
