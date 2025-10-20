@@ -5,6 +5,7 @@ import 'package:mobile_delivery/models/product_data.dart';
 import 'package:mobile_delivery/pages/user_pages/user_ReceivedItems.dart';
 import 'package:mobile_delivery/pages/user_pages/user_createparcel.dart';
 import 'package:mobile_delivery/pages/user_pages/user_profile.dart';
+import 'package:mobile_delivery/pages/user_pages/user_sendparcel.dart';
 import 'package:mobile_delivery/pages/user_pages/user_sentItems.dart';
 import 'package:mobile_delivery/providers/auth_provider.dart';
 import 'package:provider/provider.dart';
@@ -206,51 +207,63 @@ class _ProductCardFromModel extends StatelessWidget {
   Widget build(BuildContext context) {
     const borderCol = Color(0x55000000);
 
-    return Container(
-      decoration: BoxDecoration(
-        color: const Color(0xFFF4EBFF),
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
         borderRadius: BorderRadius.circular(12),
-      ),
-      child: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: borderCol),
-        ),
-        padding: const EdgeInsets.all(10),
-        child: Row(
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(10),
-              child: Image.network(
-                product.imageUrl,
-                width: 64,
-                height: 64,
-                fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => Container(
-                  width: 64,
-                  height: 64,
-                  color: Colors.white,
-                  child: const Icon(Icons.inventory_2, size: 32),
-                ),
-              ),
+        onTap: () {
+          Get.to(() => SendParcelPage(product: product));
+        },
+        child: Container(
+          decoration: BoxDecoration(
+            color: const Color(0xFFF4EBFF),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: borderCol),
             ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    product.name.isEmpty ? '(ไม่มีชื่อสินค้า)' : product.name,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
+            padding: const EdgeInsets.all(10),
+            child: Row(
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(10),
+                  child: Image.network(
+                    product.imageUrl,
+                    width: 64,
+                    height: 64,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => Container(
+                      width: 64,
+                      height: 64,
+                      color: Colors.white,
+                      child: const Icon(Icons.inventory_2, size: 32),
                     ),
                   ),
-                  const SizedBox(height: 4),
-                ],
-              ),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        product.name.isEmpty
+                            ? '(ไม่มีชื่อสินค้า)'
+                            : product.name,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                    ],
+                  ),
+                ),
+                const Icon(Icons.chevron_right),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );

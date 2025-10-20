@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:mobile_delivery/models/product_data.dart';
 import 'package:mobile_delivery/pages/user_pages/user_createparcel.dart';
 import 'package:mobile_delivery/pages/user_pages/user_home.dart';
 
 class SendParcelPage extends StatefulWidget {
-  const SendParcelPage({super.key});
+  final Product product;
+  const SendParcelPage({super.key, required this.product});
 
   @override
   State<SendParcelPage> createState() => _SendParcelPageState();
@@ -62,7 +64,6 @@ class _SendParcelPageState extends State<SendParcelPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // ค้นหาผู้รับ
               const Text(
                 'ค้นหาผู้รับ',
                 style: TextStyle(fontWeight: FontWeight.w700),
@@ -307,9 +308,6 @@ class _SendParcelPageState extends State<SendParcelPage> {
   }
 
   Widget _recipientInfo(_Recipient? r) {
-    // ถ้ายังไม่ค้นหา โชว์ placeholder ตามสไตล์ภาพ
-    final name = r?.name ?? 'ชื่อผู้รับ : -';
-    final phone = r?.phone ?? 'เบอร์โทร : -';
     final avatar = r?.avatarUrl;
 
     return Container(
