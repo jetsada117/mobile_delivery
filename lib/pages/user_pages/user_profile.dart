@@ -4,7 +4,6 @@ import 'package:mobile_delivery/pages/user_pages/user_ReceivedItems.dart';
 import 'package:mobile_delivery/pages/user_pages/user_addaddress.dart';
 import 'package:mobile_delivery/pages/user_pages/user_editaddress.dart';
 import 'package:mobile_delivery/pages/user_pages/user_home.dart';
-import 'package:mobile_delivery/pages/user_pages/user_createparcel.dart';
 import 'package:mobile_delivery/pages/user_pages/user_sentItems.dart';
 
 class UserProfilePage extends StatefulWidget {
@@ -20,12 +19,10 @@ class _UserProfilePageState extends State<UserProfilePage> {
   static const borderCol = Color(0x55000000);
   static const linkBlue = Color(0xFF2D72FF);
 
-  // ข้อมูลผู้ใช้ (ตัวอย่าง)
   final String _name = 'นายทดสอบ อินทร์ศักดา';
   final String _phone = '061-279-4147';
   final String _avatarUrl = 'https://i.pravatar.cc/160?img=23';
 
-  // ที่อยู่ (แก้ไข/เพิ่มได้)
   final List<TextEditingController> _addresses = [
     TextEditingController(text: 'บ้านเลขที่111'),
     TextEditingController(text: 'บ้านเลขที่222'),
