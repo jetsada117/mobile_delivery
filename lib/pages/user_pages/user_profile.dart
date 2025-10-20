@@ -1,5 +1,7 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:mobile_delivery/models/user_address.dart';
 import 'package:mobile_delivery/pages/login.dart';
 import 'package:mobile_delivery/pages/user_pages/user_ReceivedItems.dart';
 import 'package:mobile_delivery/pages/user_pages/user_addaddress.dart';
@@ -22,28 +24,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
   static const borderCol = Color(0x55000000);
   static const linkBlue = Color(0xFF2D72FF);
 
-  final List<TextEditingController> _addresses = [
-    TextEditingController(text: 'บ้านเลขที่111'),
-    TextEditingController(text: 'บ้านเลขที่222'),
-  ];
-  final List<bool> _editing = [false, false];
-
   int _navIndex = 3;
-
-  @override
-  void dispose() {
-    for (final c in _addresses) {
-      c.dispose();
-    }
-    super.dispose();
-  }
-
-  void _addAddress() {
-    setState(() {
-      _addresses.add(TextEditingController());
-      _editing.add(true);
-    });
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -71,7 +52,6 @@ class _UserProfilePageState extends State<UserProfilePage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Avatar
               Center(
                 child: CircleAvatar(
                   radius: 48,
@@ -91,7 +71,6 @@ class _UserProfilePageState extends State<UserProfilePage> {
               ),
               const SizedBox(height: 16),
 
-              // การ์ดข้อมูลผู้ใช้
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(14),
@@ -121,10 +100,8 @@ class _UserProfilePageState extends State<UserProfilePage> {
                   ],
                 ),
               ),
-
               const SizedBox(height: 16),
 
-              // ส่วนที่อยู่ของฉัน
               Text(
                 'ที่อยู่ของฉัน',
                 style: TextStyle(
@@ -135,10 +112,39 @@ class _UserProfilePageState extends State<UserProfilePage> {
               ),
               const SizedBox(height: 8),
 
-              for (int i = 0; i < _addresses.length; i++) ...[
-                _addressItem(index: i),
-                const SizedBox(height: 12),
-              ],
+              StreamBuilder<List<UserAddress>>(
+                stream: userAddressesStream(user!.uid),
+                builder: (context, snap) {
+                  if (snap.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+                  if (snap.hasError) {
+                    return const Text('โหลดที่อยู่ไม่สำเร็จ');
+                  }
+                  final addresses = snap.data ?? [];
+                  if (addresses.isEmpty) {
+                    return Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: borderCol),
+                      ),
+                      child: const Text('ยังไม่มีที่อยู่'),
+                    );
+                  }
+
+                  return ListView.separated(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: addresses.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 12),
+                    itemBuilder: (_, i) =>
+                        _addressItemFromModel(addresses[i], user.uid),
+                  );
+                },
+              ),
+              const SizedBox(height: 12),
 
               Row(
                 children: [
@@ -174,17 +180,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
                       ),
                     ),
                     onPressed: () async {
-                      final String? newAddr = await Get.to<String>(
-                        () => const AddAddressPage(),
-                      );
-                      if (newAddr != null && newAddr.trim().isNotEmpty) {
-                        setState(() {
-                          _addresses.add(
-                            TextEditingController(text: newAddr.trim()),
-                          );
-                          _editing.add(false);
-                        });
-                      }
+                      Get.to(() => AddAddressPage());
                     },
                   ),
                 ],
@@ -202,22 +198,18 @@ class _UserProfilePageState extends State<UserProfilePage> {
         backgroundColor: cardBg,
         onTap: (i) {
           if (i == 0) {
-            // ไปหน้า "หน้าหลัก" และแทนหน้าปัจจุบัน
             Get.off(() => const UserHomePage());
             return;
           }
           if (i == 1) {
-            // ไปหน้า "หน้าหลัก" และแทนหน้าปัจจุบัน
             Get.off(() => const SentItemsPage());
             return;
           }
           if (i == 2) {
-            // ไปหน้า "หน้าหลัก" และแทนหน้าปัจจุบัน
             Get.off(() => const ReceivedItemsPage());
             return;
           }
           if (i == 3) {
-            // ไปหน้า "หน้าหลัก" และแทนหน้าปัจจุบัน
             Get.off(() => const UserProfilePage());
             return;
           }
@@ -239,77 +231,6 @@ class _UserProfilePageState extends State<UserProfilePage> {
           BottomNavigationBarItem(
             icon: Icon(Icons.person_outline),
             label: 'โปรไฟล์',
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _addressItem({required int index}) {
-    final label = 'ที่อยู่${index + 1}';
-    return Container(
-      padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border.all(color: borderCol),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // หัวข้อ + ปุ่มแก้ไข
-          Row(
-            children: [
-              Text(label, style: const TextStyle(fontWeight: FontWeight.w700)),
-              const Spacer(),
-              IconButton(
-                tooltip: 'แก้ไขที่อยู่',
-                icon: const Icon(Icons.edit_outlined),
-                onPressed: () async {
-                  final newAddress = await Get.to<String>(
-                    () =>
-                        EditAddressPage(initialAddress: _addresses[index].text),
-                  );
-
-                  if (newAddress != null && newAddress.trim().isNotEmpty) {
-                    setState(() => _addresses[index].text = newAddress.trim());
-                  }
-                },
-              ),
-
-              // ลบที่อยู่ (ถ้าต้องการ)
-              if (_addresses.length > 1)
-                IconButton(
-                  tooltip: 'ลบ',
-                  icon: const Icon(Icons.delete_outline),
-                  onPressed: () {
-                    setState(() {
-                      _addresses.removeAt(index).dispose();
-                      _editing.removeAt(index);
-                    });
-                  },
-                ),
-            ],
-          ),
-          const SizedBox(height: 6),
-          TextField(
-            controller: _addresses[index],
-            readOnly: !_editing[index],
-            maxLines: 3,
-            minLines: 2,
-            decoration: InputDecoration(
-              hintText: 'รายละเอียดที่อยู่',
-              isDense: true,
-              filled: true,
-              fillColor: Colors.white,
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 12,
-                vertical: 12,
-              ),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
-            ),
           ),
         ],
       ),
@@ -342,5 +263,75 @@ class _UserProfilePageState extends State<UserProfilePage> {
     }
 
     Get.offAll(() => const LoginPage());
+  }
+
+  Widget _addressItemFromModel(UserAddress addr, String uid) {
+    return Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border.all(color: borderCol),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Text(
+                'ที่อยู่',
+                style: TextStyle(fontWeight: FontWeight.w700),
+              ),
+              const Spacer(),
+              IconButton(
+                tooltip: 'แก้ไขที่อยู่',
+                icon: const Icon(Icons.edit_outlined),
+                onPressed: () async {
+                  Get.to(() => EditAddressPage(initialAddress: ""));
+                },
+              ),
+              IconButton(
+                tooltip: 'ลบ',
+                icon: const Icon(Icons.delete_outline),
+                onPressed: () async {
+                  await FirebaseFirestore.instance
+                      .collection('users')
+                      .doc(uid)
+                      .collection('addresses')
+                      .doc(addr.id)
+                      .delete();
+                },
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          TextField(
+            controller: TextEditingController(text: addr.address),
+            readOnly: true,
+            maxLines: 3,
+            minLines: 2,
+            decoration: InputDecoration(
+              isDense: true,
+              filled: true,
+              fillColor: Colors.white,
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 12,
+              ),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+          ),
+          if (addr.lat != null && addr.lng != null) ...[
+            const SizedBox(height: 6),
+            Text(
+              'พิกัด: ${addr.lat}, ${addr.lng}',
+              style: const TextStyle(fontSize: 12),
+            ),
+          ],
+        ],
+      ),
+    );
   }
 }
