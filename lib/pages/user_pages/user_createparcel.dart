@@ -37,7 +37,6 @@ class _CreateParcelPageState extends State<CreateParcelPage> {
 
   @override
   Widget build(BuildContext context) {
-    // theme like mock
     const bg = Color(0xFFD2C2F1);
     const cardBg = Color(0xFFF4EBFF);
     const borderCol = Color(0x55000000);
@@ -45,6 +44,15 @@ class _CreateParcelPageState extends State<CreateParcelPage> {
     return Scaffold(
       backgroundColor: bg,
       appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(
+            Icons.arrow_back_ios_new_rounded,
+            color: Colors.black,
+          ),
+          onPressed: () {
+            Get.off(() => const UserHomePage());
+          },
+        ),
         title: const Text(
           'สร้างสินค้า',
           style: TextStyle(fontWeight: FontWeight.w800),
