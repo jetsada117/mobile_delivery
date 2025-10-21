@@ -15,13 +15,11 @@ class AddAddressPage extends StatefulWidget {
 }
 
 class _AddAddressPageState extends State<AddAddressPage> {
-  // ---------- Theme ----------
   static const bg = Color(0xFFD2C2F1);
   static const cardBg = Color(0xFFF4EBFF);
   static const borderCol = Color(0x55000000);
   static const linkBlue = Color(0xFF2D72FF);
 
-  // ---------- Controllers / States ----------
   final _addrCtrl = TextEditingController();
   final _map = MapController();
   LatLng? _center;
@@ -45,8 +43,6 @@ class _AddAddressPageState extends State<AddAddressPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: bg,
-
-      // --------------------------- App Bar ---------------------------
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -56,7 +52,6 @@ class _AddAddressPageState extends State<AddAddressPage> {
         ),
       ),
 
-      // --------------------------- Body ------------------------------
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
@@ -73,7 +68,6 @@ class _AddAddressPageState extends State<AddAddressPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    // ------------------- ที่อยู่ (ข้อความ) -------------------
                     const Text(
                       'ที่อยู่',
                       style: TextStyle(
@@ -99,10 +93,8 @@ class _AddAddressPageState extends State<AddAddressPage> {
                         ),
                       ),
                     ),
-
                     const SizedBox(height: 12),
 
-                    // ------------------- แผนที่ + พิกัด -------------------
                     Row(
                       children: [
                         const Text(
@@ -198,7 +190,6 @@ class _AddAddressPageState extends State<AddAddressPage> {
 
                     const SizedBox(height: 16),
 
-                    // ------------------- ปุ่ม ยกเลิก / ยืนยัน -------------------
                     Row(
                       children: [
                         Expanded(
@@ -251,7 +242,6 @@ class _AddAddressPageState extends State<AddAddressPage> {
     );
   }
 
-  // ---------- GPS / Map ----------
   Future<void> _initLocation() async {
     try {
       final p = await _determinePosition();
@@ -289,7 +279,6 @@ class _AddAddressPageState extends State<AddAddressPage> {
     return Geolocator.getCurrentPosition();
   }
 
-  // ---------- Firestore ----------
   Future<void> _saveAddress() async {
     final text = _addrCtrl.text.trim();
     if (text.isEmpty) {
@@ -333,7 +322,7 @@ class _AddAddressPageState extends State<AddAddressPage> {
             'created_at': FieldValue.serverTimestamp(),
           });
 
-      Get.back(); // ปิดหน้า
+      Get.back();
       Get.snackbar(
         'สำเร็จ',
         'เพิ่มที่อยู่เรียบร้อยแล้ว',

@@ -298,7 +298,6 @@ class _CreateParcelPageState extends State<CreateParcelPage> {
     );
   }
 
-  // ----------------------- Widgets -----------------------
   Widget _input({
     required TextEditingController controller,
     String? hint,
@@ -359,7 +358,6 @@ class _CreateParcelPageState extends State<CreateParcelPage> {
   Widget _miniMapForAddress(UserAddress addr) {
     const borderCol = Color(0x55000000);
 
-    // ถ้าไม่มีพิกัด ให้แสดงกล่อง placeholder
     if (addr.lat == null || addr.lng == null) {
       return Container(
         height: 64,
@@ -418,7 +416,6 @@ class _CreateParcelPageState extends State<CreateParcelPage> {
     );
   }
 
-  // ----------------------- Image Picker Dialog -----------------------
   Future<XFile?> _openImagePopup(BuildContext context) async {
     XFile? picked;
 
@@ -652,7 +649,7 @@ class _CreateParcelPageState extends State<CreateParcelPage> {
         'rider_id': '',
         'send_at': sendAddressRef,
         'receive_at': null,
-        'is_active': true,
+        'is_active': false,
         'current_status': 0,
       };
       await db.collection('orders').doc(newOrderId.toString()).set(orderData);

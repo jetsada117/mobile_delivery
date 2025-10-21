@@ -35,9 +35,10 @@ class _UserHomePageState extends State<UserHomePage> {
 
     final auth = context.watch<AuthProvider>();
     final user = auth.currentUser;
+    final uid = user!.uid;
 
-    final displayName = user?.name;
-    final avatarUrl = user?.imageUrl;
+    final displayName = user.name;
+    final avatarUrl = user.imageUrl;
 
     return Scaffold(
       backgroundColor: bg,
@@ -57,7 +58,7 @@ class _UserHomePageState extends State<UserHomePage> {
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(999),
                         child: Image.network(
-                          avatarUrl!,
+                          avatarUrl,
                           errorBuilder: (c, e, s) => const Icon(Icons.person),
                         ),
                       ),
@@ -102,7 +103,7 @@ class _UserHomePageState extends State<UserHomePage> {
               const SizedBox(height: 10),
 
               StreamBuilder<List<Product>>(
-                stream: productsStream(),
+                stream: productsStream(senderId: uid),
                 builder: (context, snap) {
                   if (snap.connectionState == ConnectionState.waiting) {
                     return const Center(child: CircularProgressIndicator());
@@ -190,12 +191,18 @@ class _UserHomePageState extends State<UserHomePage> {
     );
   }
 
-  Stream<List<Product>> productsStream() async* {
+  Stream<List<Product>> productsStream({required String senderId}) async* {
+    if (senderId.isEmpty) {
+      yield const <Product>[];
+      return;
+    }
+
     final db = FirebaseFirestore.instance;
 
     await for (final ordSnap
         in db
             .collection('orders')
+            .where('send_id', isEqualTo: senderId)
             .where('current_status', isEqualTo: 0)
             .snapshots()) {
       final orderIds = ordSnap.docs
@@ -204,7 +211,7 @@ class _UserHomePageState extends State<UserHomePage> {
           .toList();
 
       if (orderIds.isEmpty) {
-        yield <Product>[];
+        yield const <Product>[];
         continue;
       }
 
@@ -216,16 +223,13 @@ class _UserHomePageState extends State<UserHomePage> {
           i,
           (i + 10 > orderIds.length) ? orderIds.length : i + 10,
         );
-
         final prodSnap = await productsCol
             .where('order_id', whereIn: chunk)
             .get();
-
         all.addAll(prodSnap.docs.map(Product.fromDoc));
       }
 
       all.sort((a, b) => b.productId.compareTo(a.productId));
-
       yield all;
     }
   }
