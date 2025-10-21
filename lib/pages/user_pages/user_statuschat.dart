@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:mobile_delivery/pages/user_pages/user_home.dart';
-import 'package:mobile_delivery/pages/user_pages/user_sentItems.dart';
-import 'package:mobile_delivery/pages/user_pages/user_receiveditems.dart';
 import 'package:mobile_delivery/pages/user_pages/user_profile.dart';
+import 'package:mobile_delivery/pages/user_pages/user_receiveditems.dart';
+import 'package:mobile_delivery/pages/user_pages/user_sentItems.dart';
+import 'package:mobile_delivery/repositories/delivery_photo.dart';
+import 'package:provider/provider.dart';
+import 'package:mobile_delivery/providers/auth_provider.dart';
+import 'package:mobile_delivery/models/delivery_photo.dart';
+import 'package:mobile_delivery/utils/functions.dart';
 
 class StatusChatPage extends StatefulWidget {
   const StatusChatPage({super.key, required this.orderId, required this.title});
@@ -21,38 +26,19 @@ class _StatusChatPageState extends State<StatusChatPage> {
   static const innerCard = Color(0xFFC9A9F5);
   static const borderCol = Color(0x55000000);
 
-  final _input = TextEditingController();
   final _scroll = ScrollController();
   int _navIndex = 1;
 
-  final List<_Msg> _msgs = [
-    const _Msg(text: '[1] รอไปรับสินค้า', side: _Side.left),
-    const _Msg(
-      text: '[2] ไรเดอร์รับงาน',
-      side: _Side.right,
-      imageUrl: 'https://picsum.photos/seed/rider/96',
-    ),
-    const _Msg(
-      text: '[3] ไรเดอร์รับสินค้าแล้ว',
-      side: _Side.right,
-      imageUrl: 'https://picsum.photos/seed/pickup/96',
-    ),
-    const _Msg(
-      text: '[4] ไรเดอร์กำลังไปส่ง',
-      side: _Side.right,
-      imageUrl: 'https://picsum.photos/seed/deliver/96',
-    ),
-  ];
-
   @override
   void dispose() {
-    _input.dispose();
     _scroll.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final currentUid = context.watch<AuthProvider>().currentUser?.uid ?? '';
+
     return Scaffold(
       backgroundColor: bg,
       appBar: AppBar(
@@ -85,10 +71,47 @@ class _StatusChatPageState extends State<StatusChatPage> {
                       borderRadius: BorderRadius.circular(16),
                     ),
                     padding: const EdgeInsets.all(12),
-                    child: ListView.builder(
-                      controller: _scroll,
-                      itemCount: _msgs.length,
-                      itemBuilder: (_, i) => _Bubble(msg: _msgs[i]),
+
+                    child: StreamBuilder<List<DeliveryPhoto>>(
+                      stream: deliveryPhotosStream(widget.orderId),
+                      builder: (context, snap) {
+                        if (snap.connectionState == ConnectionState.waiting) {
+                          return const Center(
+                            child: CircularProgressIndicator(),
+                          );
+                        }
+                        if (snap.hasError) {
+                          return Center(
+                            child: Text('โหลดข้อมูลไม่สำเร็จ: ${snap.error}'),
+                          );
+                        }
+                        final photos = snap.data ?? [];
+                        if (photos.isEmpty) {
+                          return const Center(
+                            child: Text('ยังไม่มีการอัปโหลดสถานะ/รูป'),
+                          );
+                        }
+
+                        return ListView.builder(
+                          controller: _scroll,
+                          itemCount: photos.length,
+                          itemBuilder: (_, i) {
+                            final d = photos[i];
+                            final text = statusLabel(d.status);
+                            final side = (d.uploadBy == currentUid)
+                                ? _Side.left
+                                : _Side.right;
+                            final msg = _Msg(
+                              text: text,
+                              side: side,
+                              imageUrl: (d.imageUrl.isNotEmpty)
+                                  ? d.imageUrl
+                                  : null,
+                            );
+                            return _Bubble(msg: msg);
+                          },
+                        );
+                      },
                     ),
                   ),
                 ),
@@ -158,60 +181,65 @@ class _Msg {
 
 class _Bubble extends StatelessWidget {
   const _Bubble({required this.msg});
-
   final _Msg msg;
 
   @override
   Widget build(BuildContext context) {
-    final isRight = msg.side == _Side.right;
+    final isLeft = msg.side == _Side.left;
+    final maxWidth = MediaQuery.of(context).size.width * 0.5;
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
-      child: Row(
-        mainAxisAlignment: isRight
-            ? MainAxisAlignment.end
-            : MainAxisAlignment.start,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (!isRight) const SizedBox(width: 4),
-          Flexible(
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.only(
-                  topLeft: const Radius.circular(14),
-                  topRight: const Radius.circular(14),
-                  bottomLeft: Radius.circular(isRight ? 14 : 2),
-                  bottomRight: Radius.circular(isRight ? 2 : 14),
-                ),
-                boxShadow: const [
-                  BoxShadow(
-                    color: Color(0x14000000),
-                    blurRadius: 3,
-                    offset: Offset(0, 1),
-                  ),
-                ],
+      child: Align(
+        alignment: isLeft ? Alignment.centerLeft : Alignment.centerRight,
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxWidth: maxWidth),
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.only(
+                topLeft: const Radius.circular(14),
+                topRight: const Radius.circular(14),
+                bottomLeft: Radius.circular(isLeft ? 2 : 14),
+                bottomRight: Radius.circular(isLeft ? 14 : 2),
               ),
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-              child: Text(msg.text),
+              boxShadow: const [
+                BoxShadow(
+                  color: Color(0x14000000),
+                  blurRadius: 3,
+                  offset: Offset(0, 1),
+                ),
+              ],
+            ),
+            padding: const EdgeInsets.all(10),
+            child: Column(
+              crossAxisAlignment: isLeft
+                  ? CrossAxisAlignment.start
+                  : CrossAxisAlignment.end,
+              children: [
+                if (msg.imageUrl != null && msg.imageUrl!.isNotEmpty) ...[
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(10),
+                    child: AspectRatio(
+                      aspectRatio: 4 / 3,
+                      child: Image.network(
+                        msg.imageUrl!,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) =>
+                            const Icon(Icons.image_not_supported),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                ],
+                Text(
+                  msg.text,
+                  textAlign: isLeft ? TextAlign.left : TextAlign.right,
+                ),
+              ],
             ),
           ),
-          if (msg.imageUrl != null) ...[
-            const SizedBox(width: 8),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(10),
-              child: Image.network(
-                msg.imageUrl!,
-                width: 44,
-                height: 44,
-                fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) =>
-                    const Icon(Icons.image_not_supported),
-              ),
-            ),
-          ],
-          if (isRight) const SizedBox(width: 4),
-        ],
+        ),
       ),
     );
   }
