@@ -72,8 +72,7 @@ class _ReceivedItemsPageState extends State<ReceivedItemsPage> {
                 itemBuilder: (_, i) {
                   final v = items[i];
                   final name = v.product?.name ?? '(ไม่มีชื่อสินค้า)';
-                  // หยิบ sender จาก extra (ถ้าใช้วิธีเร็ว)
-                  final sender = v.extra; // UserData?
+                  final sender = v.extra;
                   final phone = (sender?.phone ?? '-') as String;
                   final imageUrl = v.product?.imageUrl ?? '';
                   final status = statusLabel(v.order.currentStatus);
@@ -81,7 +80,7 @@ class _ReceivedItemsPageState extends State<ReceivedItemsPage> {
                   return _ReceivedCard(
                     item: _ReceivedItem(
                       name: name,
-                      phone: phone, // เบอร์ผู้ส่ง
+                      phone: phone,
                       status: status,
                       imageUrl: imageUrl,
                     ),
@@ -98,54 +97,46 @@ class _ReceivedItemsPageState extends State<ReceivedItemsPage> {
               );
             },
           ),
+        ],
+      ),
 
-          Positioned(
-            right: 16,
-            bottom: 12 + kBottomNavigationBarHeight,
-            child: SafeArea(
-              child: SizedBox(
-                height: 32,
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    final points = <LatLng>[
-                      const LatLng(16.2448, 103.2520),
-                      const LatLng(16.2380, 103.2425),
-                      const LatLng(16.2325, 103.2580),
-                    ];
-                    Get.to(
-                      () => CombinedMapPage(
-                        points: points,
-                        riderName: 'นายสมชาย เดลิเวอรี่',
-                        statusText: '[3]',
-                        phone: '012-345-6789',
-                        plate: '8กพ 877',
-                        avatarUrl: 'https://i.pravatar.cc/100?img=15',
-                      ),
-                    );
-                  },
-                  icon: const Icon(Icons.map_outlined, size: 16),
-                  label: const Text(
-                    'แผนที่รวม',
-                    style: TextStyle(fontSize: 12),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    elevation: 0,
-                    backgroundColor: Colors.black87,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 8,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
+      floatingActionButton: SafeArea(
+        minimum: const EdgeInsets.only(right: 8, bottom: 8),
+        child: SizedBox(
+          height: 36,
+          child: ElevatedButton.icon(
+            onPressed: () {
+              final points = <LatLng>[
+                const LatLng(16.2448, 103.2520),
+                const LatLng(16.2380, 103.2425),
+                const LatLng(16.2325, 103.2580),
+              ];
+              Get.to(
+                () => CombinedMapPage(
+                  points: points,
+                  riderName: 'นายสมชาย เดลิเวอรี่',
+                  statusText: '[3]',
+                  phone: '012-345-6789',
+                  plate: '8กพ 877',
+                  avatarUrl: 'https://i.pravatar.cc/100?img=15',
                 ),
+              );
+            },
+            icon: const Icon(Icons.map_outlined, size: 16),
+            label: const Text('แผนที่รวม', style: TextStyle(fontSize: 12)),
+            style: ElevatedButton.styleFrom(
+              elevation: 0,
+              backgroundColor: Colors.black87,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
               ),
             ),
           ),
-        ],
+        ),
       ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
 
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _navIndex,
@@ -197,7 +188,7 @@ class _ReceivedItemsPageState extends State<ReceivedItemsPage> {
 
 class _ReceivedItem {
   final String name;
-  final String phone; // <- เบอร์ผู้ส่ง
+  final String phone;
   final String status;
   final String imageUrl;
   const _ReceivedItem({
