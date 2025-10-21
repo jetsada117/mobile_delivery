@@ -68,7 +68,6 @@ class _StatusChatPageState extends State<StatusChatPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // การ์ดห้องแชต
               Expanded(
                 child: Container(
                   decoration: BoxDecoration(
@@ -97,7 +96,6 @@ class _StatusChatPageState extends State<StatusChatPage> {
         ),
       ),
 
-      // Bottom Navigation
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _navIndex,
         type: BottomNavigationBarType.fixed,
@@ -146,8 +144,6 @@ class _StatusChatPageState extends State<StatusChatPage> {
   }
 }
 
-/* ---------- Models & UI pieces ---------- */
-
 enum _Side { left, right }
 
 class _Msg {
@@ -175,7 +171,6 @@ class _Bubble extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (!isRight) const SizedBox(width: 4),
-          // ข้อความ
           Flexible(
             child: Container(
               decoration: BoxDecoration(
@@ -198,7 +193,6 @@ class _Bubble extends StatelessWidget {
               child: Text(msg.text),
             ),
           ),
-          // รูปเล็กสำหรับสถานะ (ถ้ามี) — วางด้านขวาเหมือนในภาพ
           if (msg.imageUrl != null) ...[
             const SizedBox(width: 8),
             ClipRRect(

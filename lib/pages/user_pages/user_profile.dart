@@ -290,8 +290,8 @@ class _UserProfilePageState extends State<UserProfilePage> {
               IconButton(
                 tooltip: 'แก้ไขที่อยู่',
                 icon: const Icon(Icons.edit_outlined),
-                onPressed: () async {
-                  Get.to(() => EditAddressPage(initialAddress: ""));
+                onPressed: () {
+                  Get.to(() => EditAddressPage(uid: uid, address: addr));
                 },
               ),
               IconButton(
