@@ -423,11 +423,9 @@ class _SendParcelPageState extends State<SendParcelPage> {
     try {
       setState(() => _submitting = true);
 
-      // order_id มาจาก product ที่ส่งเข้ามาในหน้านี้
-      final orderId = widget.product.orderId; // int หรือ String ตามโมเดลคุณ
+      final orderId = widget.product.orderId;
       final orderDocId = orderId.toString();
 
-      // เก็บ "พาธเอกสาร" ของที่อยู่ผู้รับ ตามรูปแบบเดียวกับที่คุณเก็บ send_at
       final receiveAddressPath =
           'users/${_recipient!.uid}/addresses/${_selectedAddressId!}';
 
@@ -435,8 +433,9 @@ class _SendParcelPageState extends State<SendParcelPage> {
           .collection('orders')
           .doc(orderDocId)
           .update({
-            'receive_id': _recipient!.uid, // ไอดีผู้รับ
-            'receive_at': receiveAddressPath, // พาธ doc ของที่อยู่ผู้รับ
+            'receive_id': _recipient!.uid,
+            'receive_at': receiveAddressPath,
+            'current_status': 1,
           });
 
       Get.snackbar('สำเร็จ', 'บันทึกผู้รับและที่อยู่เรียบร้อย');

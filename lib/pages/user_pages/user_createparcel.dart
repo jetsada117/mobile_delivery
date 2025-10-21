@@ -342,7 +342,6 @@ class _CreateParcelPageState extends State<CreateParcelPage> {
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ชื่อที่อยู่ (บรรทัดบน)
             Text(
               addr.address,
               style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
@@ -350,7 +349,6 @@ class _CreateParcelPageState extends State<CreateParcelPage> {
               overflow: TextOverflow.ellipsis,
             ),
             const SizedBox(height: 6),
-            // แผนที่ย่อ (บรรทัดล่าง)
             _miniMapForAddress(addr),
           ],
         ),
@@ -645,7 +643,7 @@ class _CreateParcelPageState extends State<CreateParcelPage> {
         'send_at': sendAddressRef,
         'receive_at': null,
         'is_active': true,
-        'current_status': 1,
+        'current_status': 0,
       };
       await db.collection('orders').doc(newOrderId.toString()).set(orderData);
 
