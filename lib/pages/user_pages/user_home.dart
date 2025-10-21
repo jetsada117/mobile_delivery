@@ -2,7 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:mobile_delivery/models/product_data.dart';
-import 'package:mobile_delivery/pages/user_pages/user_ReceivedItems.dart';
+import 'package:mobile_delivery/pages/user_pages/user_receiveditems.dart';
 import 'package:mobile_delivery/pages/user_pages/user_createparcel.dart';
 import 'package:mobile_delivery/pages/user_pages/user_profile.dart';
 import 'package:mobile_delivery/pages/user_pages/user_sendparcel.dart';

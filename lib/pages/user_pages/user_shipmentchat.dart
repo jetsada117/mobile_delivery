@@ -4,7 +4,7 @@ import 'package:get/get.dart';
 // ถ้ามีหน้าเหล่านี้อยู่แล้วให้ import ของจริงแทน
 import 'package:mobile_delivery/pages/user_pages/user_home.dart';
 import 'package:mobile_delivery/pages/user_pages/user_sentItems.dart';
-import 'package:mobile_delivery/pages/user_pages/user_receivedItems.dart';
+import 'package:mobile_delivery/pages/user_pages/user_receiveditems.dart';
 import 'package:mobile_delivery/pages/user_pages/user_profile.dart';
 
 class ShipmentChatPage extends StatefulWidget {
@@ -26,10 +26,7 @@ class _ShipmentChatPageState extends State<ShipmentChatPage> {
   int _navIndex = 1; // อยู่แท็บ "สินค้าที่ส่ง"
 
   final List<_Msg> _msgs = [
-    const _Msg(
-      text: '[1] รอไปรับสินค้า',
-      side: _Side.left,
-    ),
+    const _Msg(text: '[1] รอไปรับสินค้า', side: _Side.left),
     const _Msg(
       text: '[2] ไรเดอร์รับงาน',
       side: _Side.right,
@@ -80,8 +77,10 @@ class _ShipmentChatPageState extends State<ShipmentChatPage> {
         automaticallyImplyLeading: false,
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title: const Text('สถานะสินค้าที่ส่ง',
-            style: TextStyle(fontWeight: FontWeight.w800)),
+        title: const Text(
+          'สถานะสินค้าที่ส่ง',
+          style: TextStyle(fontWeight: FontWeight.w800),
+        ),
       ),
 
       body: SafeArea(
@@ -232,8 +231,9 @@ class _Bubble extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
-        mainAxisAlignment:
-            isRight ? MainAxisAlignment.end : MainAxisAlignment.start,
+        mainAxisAlignment: isRight
+            ? MainAxisAlignment.end
+            : MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (!isRight) const SizedBox(width: 4),
@@ -253,7 +253,7 @@ class _Bubble extends StatelessWidget {
                     color: Color(0x14000000),
                     blurRadius: 3,
                     offset: Offset(0, 1),
-                  )
+                  ),
                 ],
               ),
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),

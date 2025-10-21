@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:mobile_delivery/pages/user_pages/user_ReceivedItems.dart';
+import 'package:mobile_delivery/pages/user_pages/user_receiveditems.dart';
 import 'package:mobile_delivery/pages/user_pages/user_combined_map.dart';
 import 'package:mobile_delivery/pages/user_pages/user_home.dart';
 import 'package:mobile_delivery/pages/user_pages/user_profile.dart';
@@ -19,7 +19,7 @@ class _SentItemsPageState extends State<SentItemsPage> {
   static const bg = Color(0xFFD2C2F1);
   static const cardBg = Color(0xFFF4EBFF);
 
-  int _navIndex = 1; // แท็บ "สินค้าที่ส่ง"
+  int _navIndex = 1;
 
   final _items = <_SentItem>[
     _SentItem(

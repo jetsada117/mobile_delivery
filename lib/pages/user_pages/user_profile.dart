@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:mobile_delivery/models/user_address.dart';
 import 'package:mobile_delivery/pages/login.dart';
-import 'package:mobile_delivery/pages/user_pages/user_ReceivedItems.dart';
+import 'package:mobile_delivery/pages/user_pages/user_receiveditems.dart';
 import 'package:mobile_delivery/pages/user_pages/user_addaddress.dart';
 import 'package:mobile_delivery/pages/user_pages/user_editaddress.dart';
 import 'package:mobile_delivery/pages/user_pages/user_home.dart';
