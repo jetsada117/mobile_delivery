@@ -343,7 +343,6 @@ class _SendParcelPageState extends State<SendParcelPage> {
             ),
           ),
           const SizedBox(width: 8),
-          // ขวา: เช็กบ็อกซ์สี่เหลี่ยม
           Checkbox(
             value: checked,
             onChanged: (_) => setState(() => _selectedAddressId = addr.id),
@@ -356,9 +355,7 @@ class _SendParcelPageState extends State<SendParcelPage> {
     );
   }
 
-  /// แผนที่ย่อสไตล์ภาพตัวอย่าง (placeholder)
   Widget _miniMapForAddress(UserAddress addr) {
-    // ไม่มีพิกัด -> โชว์ placeholder
     if (addr.lat == null || addr.lng == null) {
       return Container(
         height: 64,
@@ -380,38 +377,40 @@ class _SendParcelPageState extends State<SendParcelPage> {
     return ClipRRect(
       borderRadius: BorderRadius.circular(8),
       child: SizedBox(
-        height: 64,
-        child: AbsorbPointer(
-          child: FlutterMap(
-            options: MapOptions(
-              initialCenter: center,
-              initialZoom: 15,
-              interactionOptions: const InteractionOptions(
-                flags: InteractiveFlag.none,
-              ),
+        height: 96,
+        child: FlutterMap(
+          options: MapOptions(
+            initialCenter: center,
+            initialZoom: 15,
+            interactionOptions: const InteractionOptions(
+              flags:
+                  InteractiveFlag.drag |
+                  InteractiveFlag.pinchZoom |
+                  InteractiveFlag.flingAnimation |
+                  InteractiveFlag.doubleTapZoom,
             ),
-            children: [
-              TileLayer(
-                urlTemplate:
-                    'https://tile.thunderforest.com/atlas/{z}/{x}/{y}.png?apikey=6949d257c8de4157a028c7a44b05af3d',
-                userAgentPackageName: 'com.example.mobile_delivery',
-              ),
-              MarkerLayer(
-                markers: [
-                  Marker(
-                    point: center,
-                    width: 28,
-                    height: 28,
-                    child: const Icon(
-                      Icons.location_on,
-                      size: 24,
-                      color: Colors.blue,
-                    ),
-                  ),
-                ],
-              ),
-            ],
           ),
+          children: [
+            TileLayer(
+              urlTemplate:
+                  'https://tile.thunderforest.com/atlas/{z}/{x}/{y}.png?apikey=6949d257c8de4157a028c7a44b05af3d',
+              userAgentPackageName: 'com.example.mobile_delivery',
+            ),
+            MarkerLayer(
+              markers: [
+                Marker(
+                  point: center,
+                  width: 28,
+                  height: 28,
+                  child: const Icon(
+                    Icons.location_on,
+                    size: 24,
+                    color: Colors.blue,
+                  ),
+                ),
+              ],
+            ),
+          ],
         ),
       ),
     );
