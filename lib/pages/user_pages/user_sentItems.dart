@@ -84,6 +84,14 @@ class _SentItemsPageState extends State<SentItemsPage> {
                       status: status,
                       imageUrl: imageUrl,
                     ),
+                    onTap: () {
+                      Get.to(
+                        () => StatusChatPage(
+                          orderId: v.order.orderId,
+                          title: "สถานะสินค้าที่ส่ง",
+                        ),
+                      );
+                    },
                   );
                 },
               );
@@ -193,8 +201,10 @@ class _SentItem {
 }
 
 class _SentCard extends StatelessWidget {
-  const _SentCard({required this.item});
+  const _SentCard({required this.item, required this.onTap});
+
   final _SentItem item;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -204,9 +214,7 @@ class _SentCard extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
-        onTap: () {
-          Get.to(() => const StatusChatPage());
-        },
+        onTap: onTap,
         child: Container(
           decoration: BoxDecoration(
             color: const Color(0xFFF4EBFF),

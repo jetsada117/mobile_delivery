@@ -6,7 +6,10 @@ import 'package:mobile_delivery/pages/user_pages/user_receiveditems.dart';
 import 'package:mobile_delivery/pages/user_pages/user_profile.dart';
 
 class StatusChatPage extends StatefulWidget {
-  const StatusChatPage({super.key});
+  const StatusChatPage({super.key, required this.orderId, required this.title});
+
+  final int orderId;
+  final String title;
 
   @override
   State<StatusChatPage> createState() => _StatusChatPageState();
@@ -56,9 +59,9 @@ class _StatusChatPageState extends State<StatusChatPage> {
         automaticallyImplyLeading: false,
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title: const Text(
-          'สถานะสินค้าที่ส่ง',
-          style: TextStyle(fontWeight: FontWeight.w800),
+        title: Text(
+          widget.title,
+          style: const TextStyle(fontWeight: FontWeight.w800),
         ),
       ),
 
