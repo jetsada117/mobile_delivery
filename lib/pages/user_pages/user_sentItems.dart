@@ -7,7 +7,7 @@ import 'package:mobile_delivery/pages/user_pages/user_combined_map.dart';
 import 'package:mobile_delivery/pages/user_pages/user_home.dart';
 import 'package:mobile_delivery/pages/user_pages/user_profile.dart';
 import 'package:mobile_delivery/pages/user_pages/user_rider_map.dart';
-import 'package:mobile_delivery/pages/user_pages/user_shipmentchat.dart';
+import 'package:mobile_delivery/pages/user_pages/user_statuschat.dart';
 import 'package:mobile_delivery/providers/auth_provider.dart';
 import 'package:mobile_delivery/repositories/send_item_view.dart';
 import 'package:mobile_delivery/utils/functions.dart';
@@ -205,15 +205,11 @@ class _SentCard extends StatelessWidget {
     const borderCol = Color(0x55000000);
 
     return Material(
-      // <- ให้มีเอฟเฟกต์ ripple
       color: Colors.transparent,
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
         onTap: () {
-          // ไปหน้าแชต (จะส่งชื่อสินค้าตามไปด้วยก็ได้)
-          Get.to(() => const ShipmentChatPage());
-          // หรือถ้าหน้าแชตรับพารามิเตอร์:
-          // Get.to(() => ShipmentChatPage(title: item.name));
+          Get.to(() => const StatusChatPage());
         },
         child: Container(
           decoration: BoxDecoration(
@@ -270,16 +266,14 @@ class _SentCard extends StatelessWidget {
                 height: 32,
                 child: ElevatedButton.icon(
                   onPressed: () {
-                    // ค่า lat/lng ตัวอย่าง: มมส (ปรับแก้ได้ตามจริง)
                     Get.to(
                       () => RiderMapPage(
                         latLng: const LatLng(16.2458, 103.2500),
                         riderName: 'นายสมชาย เดลิเวอรี่',
-                        statusText: item.status, // ใช้สถานะจากการ์ด
+                        statusText: item.status,
                         phone: '012-345-6789',
                         plate: '8กพ 877',
-                        avatarUrl: item
-                            .imageUrl, // ใช้รูปสินค้าหรือเปลี่ยนเป็นรูปไรเดอร์จริง
+                        avatarUrl: item.imageUrl,
                       ),
                     );
                   },

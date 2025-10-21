@@ -1,21 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-
-// ถ้ามีหน้าเหล่านี้อยู่แล้วให้ import ของจริงแทน
 import 'package:mobile_delivery/pages/user_pages/user_home.dart';
 import 'package:mobile_delivery/pages/user_pages/user_sentItems.dart';
 import 'package:mobile_delivery/pages/user_pages/user_receiveditems.dart';
 import 'package:mobile_delivery/pages/user_pages/user_profile.dart';
 
-class ShipmentChatPage extends StatefulWidget {
-  const ShipmentChatPage({super.key});
+class StatusChatPage extends StatefulWidget {
+  const StatusChatPage({super.key});
 
   @override
-  State<ShipmentChatPage> createState() => _ShipmentChatPageState();
+  State<StatusChatPage> createState() => _StatusChatPageState();
 }
 
-class _ShipmentChatPageState extends State<ShipmentChatPage> {
-  // โทนสีเดียวกับโปรเจ็กต์
+class _StatusChatPageState extends State<StatusChatPage> {
   static const bg = Color(0xFFD2C2F1);
   static const cardBg = Color(0xFFF4EBFF);
   static const innerCard = Color(0xFFC9A9F5);
@@ -23,7 +20,7 @@ class _ShipmentChatPageState extends State<ShipmentChatPage> {
 
   final _input = TextEditingController();
   final _scroll = ScrollController();
-  int _navIndex = 1; // อยู่แท็บ "สินค้าที่ส่ง"
+  int _navIndex = 1;
 
   final List<_Msg> _msgs = [
     const _Msg(text: '[1] รอไปรับสินค้า', side: _Side.left),
@@ -49,24 +46,6 @@ class _ShipmentChatPageState extends State<ShipmentChatPage> {
     _input.dispose();
     _scroll.dispose();
     super.dispose();
-  }
-
-  void _send() {
-    final t = _input.text.trim();
-    if (t.isEmpty) return;
-    setState(() {
-      _msgs.add(_Msg(text: t, side: _Side.left));
-      _input.clear();
-    });
-    Future.delayed(const Duration(milliseconds: 50), () {
-      if (_scroll.hasClients) {
-        _scroll.animateTo(
-          _scroll.position.maxScrollExtent + 100,
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeOut,
-        );
-      }
-    });
   }
 
   @override
@@ -113,47 +92,6 @@ class _ShipmentChatPageState extends State<ShipmentChatPage> {
                 ),
               ),
               const SizedBox(height: 10),
-
-              // แถบพิมพ์ข้อความ
-              Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _input,
-                      decoration: InputDecoration(
-                        hintText: 'พิมพ์ข้อความ...',
-                        isDense: true,
-                        filled: true,
-                        fillColor: Colors.white,
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 12,
-                        ),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      onSubmitted: (_) => _send(),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  SizedBox(
-                    height: 44,
-                    child: ElevatedButton(
-                      onPressed: _send,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.black,
-                        foregroundColor: Colors.white,
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      child: const Text('ส่ง'),
-                    ),
-                  ),
-                ],
-              ),
             ],
           ),
         ),
