@@ -23,6 +23,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
   static const cardBg = Color(0xFFF4EBFF);
   static const borderCol = Color(0x55000000);
   static const linkBlue = Color(0xFF2D72FF);
+  static const double _footerHeight = 64;
 
   int _navIndex = 3;
 
@@ -48,7 +49,12 @@ class _UserProfilePageState extends State<UserProfilePage> {
       ),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+          padding: EdgeInsets.fromLTRB(
+            16,
+            8,
+            16,
+            16 + _footerHeight + MediaQuery.of(context).viewPadding.bottom,
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -150,47 +156,50 @@ class _UserProfilePageState extends State<UserProfilePage> {
         ),
       ),
 
-      bottomSheet: Container(
-        color: bg,
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-        child: Row(
-          children: [
-            Expanded(
-              child: ElevatedButton(
-                onPressed: () => _onLogout(context),
+      bottomSheet: SafeArea(
+        top: false,
+        child: Container(
+          color: bg,
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+          child: Row(
+            children: [
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: () => _onLogout(context),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red,
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  child: const Text('ออกจากระบบ'),
+                ),
+              ),
+              const SizedBox(width: 12),
+              ElevatedButton.icon(
+                icon: const Icon(Icons.add, size: 18),
+                label: const Text(' เพิ่มที่อยู่'),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.red,
+                  backgroundColor: linkBlue,
                   foregroundColor: Colors.white,
                   elevation: 0,
-                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 10,
+                  ),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(8),
                   ),
                 ),
-                child: const Text('ออกจากระบบ'),
+                onPressed: () {
+                  Get.to(() => const AddAddressPage());
+                },
               ),
-            ),
-            const SizedBox(width: 12),
-            ElevatedButton.icon(
-              icon: const Icon(Icons.add, size: 18),
-              label: const Text(' เพิ่มที่อยู่'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: linkBlue,
-                foregroundColor: Colors.white,
-                elevation: 0,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 10,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              onPressed: () async {
-                Get.to(() => const AddAddressPage());
-              },
-            ),
-          ],
+            ],
+          ),
         ),
       ),
 

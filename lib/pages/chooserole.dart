@@ -36,7 +36,6 @@ class _ChooseRoleState extends State<ChooseRole> {
                 style: TextStyle(fontSize: 32, fontWeight: FontWeight.w700),
               ),
               const SizedBox(height: 16),
-              // โลโก้วงกลม
               Center(
                 child: Container(
                   width: 170,
@@ -48,7 +47,7 @@ class _ChooseRoleState extends State<ChooseRole> {
                   padding: const EdgeInsets.all(10),
                   child: ClipOval(
                     child: Image.asset(
-                      'assets/images/system/logo.jpg', // เปลี่ยนพาธตามโปรเจกต์คุณ
+                      'assets/images/system/logo.jpg',
                       fit: BoxFit.cover,
                     ),
                   ),
@@ -56,7 +55,6 @@ class _ChooseRoleState extends State<ChooseRole> {
               ),
               const SizedBox(height: 18),
 
-              // การ์ดเลือกประเภท
               Center(
                 child: ConstrainedBox(
                   constraints: const BoxConstraints(maxWidth: 380),
@@ -81,7 +79,7 @@ class _ChooseRoleState extends State<ChooseRole> {
                             ),
                           ),
                           const SizedBox(height: 24),
-                          // ปุ่ม User
+
                           SizedBox(
                             width: 240,
                             height: 42,
@@ -101,7 +99,7 @@ class _ChooseRoleState extends State<ChooseRole> {
                             ),
                           ),
                           const SizedBox(height: 12),
-                          // ปุ่ม Rider
+
                           SizedBox(
                             width: 240,
                             height: 42,
@@ -121,14 +119,14 @@ class _ChooseRoleState extends State<ChooseRole> {
                             ),
                           ),
                           const SizedBox(height: 18),
-                          // ปุ่มยกเลิก สีดำ ทรง pill
+
                           Align(
                             alignment: Alignment.center,
                             child: SizedBox(
                               height: 36,
                               width: 96,
                               child: ElevatedButton(
-                                onPressed: () => Get.back(), // ✅ ใช้ GetX
+                                onPressed: () => Get.back(),
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: Colors.black,
                                   foregroundColor: Colors.white,
