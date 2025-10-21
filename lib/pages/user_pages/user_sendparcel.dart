@@ -2,11 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:get/get.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:http/http.dart' as http;
 import 'package:latlong2/latlong.dart';
 import 'package:mobile_delivery/models/product_data.dart';
 import 'package:mobile_delivery/models/user_data.dart';
 import 'package:mobile_delivery/models/user_address.dart';
 import 'package:mobile_delivery/pages/user_pages/user_home.dart';
+import 'package:mobile_delivery/providers/auth_provider.dart';
+import 'package:provider/provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class SendParcelPage extends StatefulWidget {
   final Product product;
@@ -22,6 +26,8 @@ class _SendParcelPageState extends State<SendParcelPage> {
   static const innerCard = Color(0xFFC9A9F5);
   static const borderCol = Color(0x55000000);
   static const linkBlue = Color(0xFF2D72FF);
+
+  final supa = Supabase.instance.client;
 
   final _phoneSearch = TextEditingController();
   bool _isSearching = false;
@@ -410,8 +416,51 @@ class _SendParcelPageState extends State<SendParcelPage> {
     );
   }
 
+  Future<String> _archiveProductImageToDelivery({
+    required String imageUrl,
+    required int orderId,
+    required String uploaderUid,
+    int status = 1,
+  }) async {
+    final res = await http.get(Uri.parse(imageUrl));
+
+    if (res.statusCode != 200) {
+      throw Exception('ดาวน์โหลดรูปไม่สำเร็จ (${res.statusCode})');
+    }
+
+    final bytes = res.bodyBytes;
+
+    final fileName = '${DateTime.now().millisecondsSinceEpoch}.jpg';
+    final objectPath = 'delivery_photos/$orderId/$fileName';
+
+    await supa.storage
+        .from('delivery')
+        .uploadBinary(
+          objectPath,
+          bytes,
+          fileOptions: const FileOptions(
+            contentType: 'image/jpeg',
+            upsert: true,
+          ),
+        );
+
+    final publicUrl = supa.storage.from('delivery').getPublicUrl(objectPath);
+
+    await FirebaseFirestore.instance.collection('delivery_photos').add({
+      'image_url': publicUrl,
+      'order_id': orderId,
+      'status': status,
+      'upload_by': uploaderUid,
+      'created_at': FieldValue.serverTimestamp(),
+    });
+
+    return publicUrl;
+  }
+
   Future<void> _confirmSend() async {
     if (_recipient == null || _selectedAddressId == null) return;
+
+    final senderId = context.read<AuthProvider>().currentUser?.uid ?? '';
 
     try {
       setState(() => _submitting = true);
@@ -431,10 +480,27 @@ class _SendParcelPageState extends State<SendParcelPage> {
             'current_status': 1,
           });
 
-      Get.snackbar('สำเร็จ', 'บันทึกผู้รับและที่อยู่เรียบร้อย');
+      if (widget.product.imageUrl.isNotEmpty && senderId.isNotEmpty) {
+        await _archiveProductImageToDelivery(
+          imageUrl: widget.product.imageUrl,
+          orderId: orderId,
+          uploaderUid: senderId,
+          status: 1,
+        );
+      }
+
+      Get.snackbar(
+        'สำเร็จ',
+        'บันทึกผู้รับ/ที่อยู่ และรูปการส่งเรียบร้อย',
+        snackPosition: SnackPosition.BOTTOM,
+      );
       Get.off(() => const UserHomePage());
     } catch (e) {
-      Get.snackbar('ผิดพลาด', 'บันทึกไม่สำเร็จ: $e');
+      Get.snackbar(
+        'ผิดพลาด',
+        'บันทึกไม่สำเร็จ: $e',
+        snackPosition: SnackPosition.BOTTOM,
+      );
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
