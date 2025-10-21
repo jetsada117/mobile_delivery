@@ -138,22 +138,18 @@ class _SentItemsPageState extends State<SentItemsPage> {
         backgroundColor: cardBg,
         onTap: (i) {
           if (i == 0) {
-            // ไปหน้า "หน้าหลัก" และแทนหน้าปัจจุบัน
             Get.off(() => const UserHomePage());
             return;
           }
           if (i == 1) {
-            // ไปหน้า "หน้าหลัก" และแทนหน้าปัจจุบัน
             Get.off(() => const SentItemsPage());
             return;
           }
           if (i == 2) {
-            // ไปหน้า "หน้าหลัก" และแทนหน้าปัจจุบัน
             Get.off(() => const ReceivedItemsPage());
             return;
           }
           if (i == 3) {
-            // ไปหน้า "หน้าหลัก" และแทนหน้าปัจจุบัน
             Get.off(() => const UserProfilePage());
             return;
           }

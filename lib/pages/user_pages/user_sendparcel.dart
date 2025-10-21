@@ -105,7 +105,6 @@ class _SendParcelPageState extends State<SendParcelPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // ======================= ค้นหาผู้รับ =======================
               const Text(
                 'ค้นหาผู้รับ',
                 style: TextStyle(fontWeight: FontWeight.w700),
@@ -215,7 +214,6 @@ class _SendParcelPageState extends State<SendParcelPage> {
     );
   }
 
-  // ======================= UI: การ์ดผู้รับ =======================
   Widget _recipientCard(UserData user, List<UserAddress> addresses) {
     return Card(
       color: cardBg,
@@ -232,7 +230,6 @@ class _SendParcelPageState extends State<SendParcelPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // --- header ผู้รับ ---
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -275,7 +272,6 @@ class _SendParcelPageState extends State<SendParcelPage> {
             ),
             const SizedBox(height: 14),
 
-            // --- รายการที่อยู่ + แผนที่จริง ---
             if (addresses.isEmpty)
               const Text(
                 'ไม่มีที่อยู่ในระบบ',
@@ -309,7 +305,6 @@ class _SendParcelPageState extends State<SendParcelPage> {
     );
   }
 
-  /// กล่องที่อยู่ (ขาว) + แผนที่ย่อ + เช็กบ็อกซ์ด้านขวา
   Widget _addressOptionTileWithMap(UserAddress addr) {
     final checked = _selectedAddressId == addr.id;
 
@@ -323,7 +318,6 @@ class _SendParcelPageState extends State<SendParcelPage> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ซ้าย: ที่อยู่ + แผนที่
           Expanded(
             child: GestureDetector(
               onTap: () => setState(() => _selectedAddressId = addr.id),
@@ -337,7 +331,7 @@ class _SendParcelPageState extends State<SendParcelPage> {
                     style: const TextStyle(fontWeight: FontWeight.w600),
                   ),
                   const SizedBox(height: 6),
-                  _miniMapForAddress(addr), // << แผนที่จริง
+                  _miniMapForAddress(addr),
                 ],
               ),
             ),

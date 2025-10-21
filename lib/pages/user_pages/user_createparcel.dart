@@ -563,14 +563,20 @@ class _CreateParcelPageState extends State<CreateParcelPage> {
     );
   }
 
-  Future<String> _uploadProductImageToSupabase(XFile file) async {
+  Future<String> _uploadProductImageToSupabase({
+    required XFile file,
+    required String senderId,
+    required int orderId,
+  }) async {
     final bytes = await file.readAsBytes();
     final fileName = 'product_${DateTime.now().millisecondsSinceEpoch}.jpg';
+
+    final filePath = '$senderId/order_$orderId/$fileName';
 
     await supa.storage
         .from('products')
         .uploadBinary(
-          fileName,
+          filePath,
           bytes,
           fileOptions: const FileOptions(
             contentType: 'image/jpeg',
@@ -578,7 +584,7 @@ class _CreateParcelPageState extends State<CreateParcelPage> {
           ),
         );
 
-    final imageUrl = supa.storage.from('products').getPublicUrl(fileName);
+    final imageUrl = supa.storage.from('products').getPublicUrl(filePath);
     return imageUrl;
   }
 
@@ -624,14 +630,18 @@ class _CreateParcelPageState extends State<CreateParcelPage> {
     }
 
     try {
-      final imageUrl = await _uploadProductImageToSupabase(_image!);
-
       final newOrderId = await _getNextOrderId();
       final newProductId = await _getNextProductId();
 
+      final imageUrl = await _uploadProductImageToSupabase(
+        file: _image!,
+        senderId: user!.uid,
+        orderId: newOrderId,
+      );
+
       final sendAddressRef = db
           .collection('users')
-          .doc(user!.uid)
+          .doc(user.uid)
           .collection('addresses')
           .doc(_selectedAddressId);
 
