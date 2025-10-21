@@ -1,12 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:mobile_delivery/models/send_item_view.dart';
 import 'package:mobile_delivery/pages/user_pages/user_receiveditems.dart';
 import 'package:mobile_delivery/pages/user_pages/user_combined_map.dart';
 import 'package:mobile_delivery/pages/user_pages/user_home.dart';
 import 'package:mobile_delivery/pages/user_pages/user_profile.dart';
 import 'package:mobile_delivery/pages/user_pages/user_rider_map.dart';
 import 'package:mobile_delivery/pages/user_pages/user_shipmentchat.dart';
+import 'package:mobile_delivery/providers/auth_provider.dart';
+import 'package:mobile_delivery/repositories/send_item_view.dart';
+import 'package:mobile_delivery/utils/functions.dart';
+import 'package:provider/provider.dart';
 
 class SentItemsPage extends StatefulWidget {
   const SentItemsPage({super.key});
@@ -21,32 +26,11 @@ class _SentItemsPageState extends State<SentItemsPage> {
 
   int _navIndex = 1;
 
-  final _items = <_SentItem>[
-    _SentItem(
-      name: 'ปลากระป๋อง',
-      phone: '085-858-8588',
-
-      status: 'กำลังจัดส่งสินค้า',
-      imageUrl: 'https://picsum.photos/seed/can/200',
-    ),
-    _SentItem(
-      name: 'มาม่า',
-      phone: '088-888-8888',
-
-      status: 'เตรียมจัดส่ง',
-      imageUrl: 'https://picsum.photos/seed/noodle/200',
-    ),
-    _SentItem(
-      name: 'ไข่ไก่',
-      phone: '083-333-3333',
-
-      status: '[1] กำลังจัดส่งสินค้า',
-      imageUrl: 'https://picsum.photos/seed/egg/200',
-    ),
-  ];
-
   @override
   Widget build(BuildContext context) {
+    final auth = context.watch<AuthProvider>();
+    final senderId = auth.currentUser?.uid ?? '';
+
     return Scaffold(
       backgroundColor: bg,
       appBar: AppBar(
@@ -61,67 +45,90 @@ class _SentItemsPageState extends State<SentItemsPage> {
 
       body: Stack(
         children: [
-          ListView.separated(
-            padding: EdgeInsets.fromLTRB(
-              16,
-              8,
-              16,
-              16 + kBottomNavigationBarHeight,
-            ),
-            itemBuilder: (_, i) => _SentCard(item: _items[i]),
-            separatorBuilder: (_, __) => const SizedBox(height: 12),
-            itemCount: _items.length,
-          ),
+          StreamBuilder<List<SentItemView>>(
+            stream: sentItemViewsStream(senderId),
+            builder: (context, snap) {
+              if (snap.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              if (snap.hasError) {
+                return Center(
+                  child: Text('โหลดข้อมูลไม่สำเร็จ: ${snap.error}'),
+                );
+              }
+              final items = snap.data ?? [];
+              if (items.isEmpty) {
+                return const Center(child: Text('ยังไม่มีรายการที่กำลังส่ง'));
+              }
 
-          Positioned(
-            right: 16,
-            bottom: 12 + kBottomNavigationBarHeight,
-            child: SafeArea(
-              child: SizedBox(
-                height: 32,
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    // ตัวอย่างพิกัดหลายจุด (แก้เป็นของจริงได้)
-                    final points = <LatLng>[
-                      const LatLng(16.2448, 103.2520),
-                      const LatLng(16.2380, 103.2425),
-                      const LatLng(16.2325, 103.2580),
-                    ];
-
-                    Get.to(
-                      () => CombinedMapPage(
-                        points: points,
-                        riderName: 'นายสมชาย เดลิเวอรี่',
-                        statusText: '[3]',
-                        phone: '012-345-6789',
-                        plate: '8กพ 877',
-                        avatarUrl: 'https://i.pravatar.cc/100?img=15',
-                      ),
-                    );
-                  },
-                  icon: const Icon(Icons.map_outlined, size: 16),
-                  label: const Text(
-                    'แผนที่รวม',
-                    style: TextStyle(fontSize: 12),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    elevation: 0,
-                    backgroundColor: Colors.black87,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 8,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
+              return ListView.separated(
+                padding: EdgeInsets.fromLTRB(
+                  16,
+                  8,
+                  16,
+                  16 + kBottomNavigationBarHeight,
                 ),
-              ),
-            ),
+                itemCount: items.length,
+                separatorBuilder: (_, __) => const SizedBox(height: 12),
+                itemBuilder: (_, i) {
+                  final v = items[i];
+                  final name = v.product?.name ?? '(ไม่มีชื่อสินค้า)';
+                  final phone = v.receiver?.phone ?? '-';
+                  final imageUrl = v.product?.imageUrl ?? '';
+                  final status = statusLabel(v.order.currentStatus);
+
+                  return _SentCard(
+                    item: _SentItem(
+                      name: name,
+                      phone: phone,
+                      status: status,
+                      imageUrl: imageUrl,
+                    ),
+                  );
+                },
+              );
+            },
           ),
         ],
       ),
+
+      floatingActionButton: SafeArea(
+        minimum: const EdgeInsets.only(right: 8, bottom: 8),
+        child: SizedBox(
+          height: 36,
+          child: ElevatedButton.icon(
+            onPressed: () {
+              final points = <LatLng>[
+                const LatLng(16.2448, 103.2520),
+                const LatLng(16.2380, 103.2425),
+                const LatLng(16.2325, 103.2580),
+              ];
+              Get.to(
+                () => CombinedMapPage(
+                  points: points,
+                  riderName: 'นายสมชาย เดลิเวอรี่',
+                  statusText: '[3]',
+                  phone: '012-345-6789',
+                  plate: '8กพ 877',
+                  avatarUrl: 'https://i.pravatar.cc/100?img=15',
+                ),
+              );
+            },
+            icon: const Icon(Icons.map_outlined, size: 16),
+            label: const Text('แผนที่รวม', style: TextStyle(fontSize: 12)),
+            style: ElevatedButton.styleFrom(
+              elevation: 0,
+              backgroundColor: Colors.black87,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+          ),
+        ),
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
 
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _navIndex,

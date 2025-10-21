@@ -190,12 +190,44 @@ class _UserHomePageState extends State<UserHomePage> {
     );
   }
 
-  Stream<List<Product>> productsStream() {
-    return FirebaseFirestore.instance
-        .collection('products')
-        .orderBy('product_id', descending: true)
-        .snapshots()
-        .map((q) => q.docs.map(Product.fromDoc).toList());
+  Stream<List<Product>> productsStream() async* {
+    final db = FirebaseFirestore.instance;
+
+    await for (final ordSnap
+        in db
+            .collection('orders')
+            .where('current_status', isEqualTo: 0)
+            .snapshots()) {
+      final orderIds = ordSnap.docs
+          .map((d) => (d.data()['order_id'] as num?)?.toInt())
+          .whereType<int>()
+          .toList();
+
+      if (orderIds.isEmpty) {
+        yield <Product>[];
+        continue;
+      }
+
+      final List<Product> all = [];
+      final productsCol = db.collection('products');
+
+      for (var i = 0; i < orderIds.length; i += 10) {
+        final chunk = orderIds.sublist(
+          i,
+          (i + 10 > orderIds.length) ? orderIds.length : i + 10,
+        );
+
+        final prodSnap = await productsCol
+            .where('order_id', whereIn: chunk)
+            .get();
+
+        all.addAll(prodSnap.docs.map(Product.fromDoc));
+      }
+
+      all.sort((a, b) => b.productId.compareTo(a.productId));
+
+      yield all;
+    }
   }
 }
 
