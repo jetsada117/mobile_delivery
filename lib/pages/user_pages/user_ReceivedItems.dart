@@ -1,12 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:mobile_delivery/models/send_item_view.dart';
 import 'package:mobile_delivery/pages/user_pages/user_combined_map.dart';
 import 'package:mobile_delivery/pages/user_pages/user_home.dart';
 import 'package:mobile_delivery/pages/user_pages/user_profile.dart';
-import 'package:mobile_delivery/pages/user_pages/user_receivedstatus.dart';
 import 'package:mobile_delivery/pages/user_pages/user_rider_map.dart';
 import 'package:mobile_delivery/pages/user_pages/user_sentItems.dart';
+import 'package:mobile_delivery/pages/user_pages/user_statuschat.dart';
+import 'package:mobile_delivery/providers/auth_provider.dart';
+import 'package:mobile_delivery/repositories/receive_item_view.dart';
+import 'package:mobile_delivery/utils/functions.dart';
+import 'package:provider/provider.dart';
 
 class ReceivedItemsPage extends StatefulWidget {
   const ReceivedItemsPage({super.key});
@@ -19,35 +24,16 @@ class _ReceivedItemsPageState extends State<ReceivedItemsPage> {
   static const bg = Color(0xFFD2C2F1);
   static const cardBg = Color(0xFFF4EBFF);
 
-  int _navIndex = 2; // แท็บ "สินค้าที่ได้รับ"
-
-  final _items = const <_ReceivedItem>[
-    _ReceivedItem(
-      name: 'Nintendo Switch',
-      phone: '088-888-8888',
-      status: '[1] รอไปรับสินค้า',
-      imageUrl: 'https://picsum.photos/seed/switch1/200',
-    ),
-    _ReceivedItem(
-      name: 'Nintendo Switch',
-      phone: '088-888-8888',
-      status: '[1] รอไปรับสินค้า',
-      imageUrl: 'https://picsum.photos/seed/switch2/200',
-    ),
-    _ReceivedItem(
-      name: 'Nintendo Switch',
-      phone: '088-888-8888',
-      status: '[1] รอไปรับสินค้า',
-      imageUrl: 'https://picsum.photos/seed/switch3/200',
-    ),
-  ];
+  int _navIndex = 2;
 
   @override
   Widget build(BuildContext context) {
+    final uid = context.watch<AuthProvider>().currentUser?.uid ?? '';
+
     return Scaffold(
       backgroundColor: bg,
       appBar: AppBar(
-        automaticallyImplyLeading: false, // ซ่อนปุ่มย้อนกลับ
+        automaticallyImplyLeading: false,
         backgroundColor: Colors.transparent,
         elevation: 0,
         title: const Text(
@@ -56,26 +42,64 @@ class _ReceivedItemsPageState extends State<ReceivedItemsPage> {
         ),
       ),
 
-      // ใช้ Stack เพื่อวางปุ่ม "แผนที่รวม" มุมขวาล่าง
       body: Stack(
         children: [
-          ListView.separated(
-            padding: EdgeInsets.fromLTRB(
-              16,
-              8,
-              16,
-              16 + kBottomNavigationBarHeight,
-            ),
-            itemBuilder: (_, i) => _ReceivedCard(
-              item: _items[i],
-              onTap: () => Get.to(() => const ReceivedStatusPage()),
-            ),
-            separatorBuilder: (_, __) => const SizedBox(height: 12),
-            itemCount: _items.length,
+          StreamBuilder<List<SentItemView>>(
+            stream: receivedItemViewsStream(uid),
+            builder: (context, snap) {
+              if (snap.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              if (snap.hasError) {
+                return Center(
+                  child: Text('โหลดข้อมูลไม่สำเร็จ: ${snap.error}'),
+                );
+              }
+              final items = snap.data ?? [];
+              if (items.isEmpty) {
+                return const Center(child: Text('ยังไม่มีรายการที่ได้รับ'));
+              }
+
+              return ListView.separated(
+                padding: EdgeInsets.fromLTRB(
+                  16,
+                  8,
+                  16,
+                  16 + kBottomNavigationBarHeight,
+                ),
+                itemCount: items.length,
+                separatorBuilder: (_, __) => const SizedBox(height: 12),
+                itemBuilder: (_, i) {
+                  final v = items[i];
+                  final name = v.product?.name ?? '(ไม่มีชื่อสินค้า)';
+                  // หยิบ sender จาก extra (ถ้าใช้วิธีเร็ว)
+                  final sender = v.extra; // UserData?
+                  final phone = (sender?.phone ?? '-') as String;
+                  final imageUrl = v.product?.imageUrl ?? '';
+                  final status = statusLabel(v.order.currentStatus);
+
+                  return _ReceivedCard(
+                    item: _ReceivedItem(
+                      name: name,
+                      phone: phone, // เบอร์ผู้ส่ง
+                      status: status,
+                      imageUrl: imageUrl,
+                    ),
+                    onTap: () {
+                      Get.to(
+                        () => StatusChatPage(
+                          orderId: v.order.orderId,
+                          title: 'สถานะสินค้าที่ได้รับ',
+                        ),
+                      );
+                    },
+                  );
+                },
+              );
+            },
           ),
 
-          // ปุ่ม "แผนที่รวม" (ยังไม่ต้องมีความสามารถ)
-               Positioned(
+          Positioned(
             right: 16,
             bottom: 12 + kBottomNavigationBarHeight,
             child: SafeArea(
@@ -83,13 +107,11 @@ class _ReceivedItemsPageState extends State<ReceivedItemsPage> {
                 height: 32,
                 child: ElevatedButton.icon(
                   onPressed: () {
-                    // ตัวอย่างพิกัดหลายจุด (แก้เป็นของจริงได้)
                     final points = <LatLng>[
                       const LatLng(16.2448, 103.2520),
                       const LatLng(16.2380, 103.2425),
                       const LatLng(16.2325, 103.2580),
                     ];
-
                     Get.to(
                       () => CombinedMapPage(
                         points: points,
@@ -133,22 +155,18 @@ class _ReceivedItemsPageState extends State<ReceivedItemsPage> {
         backgroundColor: cardBg,
         onTap: (i) {
           if (i == 0) {
-            // ไปหน้า "หน้าหลัก" และแทนหน้าปัจจุบัน
             Get.off(() => const UserHomePage());
             return;
           }
           if (i == 1) {
-            // ไปหน้า "หน้าหลัก" และแทนหน้าปัจจุบัน
             Get.off(() => const SentItemsPage());
             return;
           }
           if (i == 2) {
-            // ไปหน้า "หน้าหลัก" และแทนหน้าปัจจุบัน
             Get.off(() => const ReceivedItemsPage());
             return;
           }
           if (i == 3) {
-            // ไปหน้า "หน้าหลัก" และแทนหน้าปัจจุบัน
             Get.off(() => const UserProfilePage());
             return;
           }
@@ -179,7 +197,7 @@ class _ReceivedItemsPageState extends State<ReceivedItemsPage> {
 
 class _ReceivedItem {
   final String name;
-  final String phone;
+  final String phone; // <- เบอร์ผู้ส่ง
   final String status;
   final String imageUrl;
   const _ReceivedItem({
@@ -198,7 +216,6 @@ class _ReceivedCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     const borderCol = Color(0x55000000);
-
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
@@ -212,7 +229,6 @@ class _ReceivedCard extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // รูปสินค้า
             ClipRRect(
               borderRadius: BorderRadius.circular(10),
               child: Image.network(
@@ -229,8 +245,6 @@ class _ReceivedCard extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 12),
-
-            // รายละเอียด
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -255,32 +269,25 @@ class _ReceivedCard extends StatelessWidget {
                 ],
               ),
             ),
-
             const SizedBox(width: 8),
-
-            // ปุ่มแผนที่ (ยังไม่ทำงาน)
-               SizedBox(
+            SizedBox(
               height: 32,
               child: ElevatedButton.icon(
                 onPressed: () {
-                  // ค่า lat/lng ตัวอย่าง: มมส (ปรับแก้ได้ตามจริง)
                   Get.to(
                     () => RiderMapPage(
                       latLng: const LatLng(16.2458, 103.2500),
                       riderName: 'นายสมชาย เดลิเวอรี่',
-                      statusText: item.status, // ใช้สถานะจากการ์ด
+                      statusText: item.status,
                       phone: '012-345-6789',
                       plate: '8กพ 877',
-                      avatarUrl: item
-                          .imageUrl, // ใช้รูปสินค้าหรือเปลี่ยนเป็นรูปไรเดอร์จริง
+                      avatarUrl: item.imageUrl,
                     ),
                   );
                 },
                 icon: const Icon(Icons.location_on_outlined, size: 16),
                 label: const Text('แผนที่', style: TextStyle(fontSize: 12)),
                 style: ElevatedButton.styleFrom(
-                  disabledBackgroundColor: Colors.grey.shade300,
-                  disabledForegroundColor: Colors.black87,
                   elevation: 0,
                   padding: const EdgeInsets.symmetric(
                     horizontal: 10,

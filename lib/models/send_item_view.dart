@@ -9,12 +9,14 @@ class SentItemView {
   final UserData? receiver; // ผู้รับ
   final UserAddress? sendAddress; // ที่อยู่ผู้ส่ง
   final UserAddress? receiveAddress; // ที่อยู่ผู้รับ
+  dynamic extra;
 
-  const SentItemView({
+  SentItemView({
     required this.order,
     this.product,
     this.receiver,
     this.sendAddress,
     this.receiveAddress,
+    this.extra,
   });
 }

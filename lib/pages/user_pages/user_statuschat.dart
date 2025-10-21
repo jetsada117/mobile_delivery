@@ -27,7 +27,6 @@ class _StatusChatPageState extends State<StatusChatPage> {
   static const borderCol = Color(0x55000000);
 
   final _scroll = ScrollController();
-  int _navIndex = 1;
 
   @override
   void dispose() {
@@ -123,7 +122,6 @@ class _StatusChatPageState extends State<StatusChatPage> {
       ),
 
       bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _navIndex,
         type: BottomNavigationBarType.fixed,
         selectedItemColor: Colors.black,
         unselectedItemColor: Colors.black54,
@@ -145,7 +143,6 @@ class _StatusChatPageState extends State<StatusChatPage> {
             Get.off(() => const UserProfilePage());
             return;
           }
-          setState(() => _navIndex = i);
         },
         items: const [
           BottomNavigationBarItem(
