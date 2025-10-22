@@ -1,8 +1,12 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:mobile_delivery/models/product_data.dart';
+import 'package:mobile_delivery/models/rider_data.dart';
+import 'package:mobile_delivery/providers/auth_provider.dart';
 
 class RiderHomePage extends StatefulWidget {
-  final String riderName;
-  const RiderHomePage({super.key, this.riderName = 'ชื่อไรเดอร์'});
+  const RiderHomePage({super.key});
 
   @override
   State<RiderHomePage> createState() => _RiderHomePageState();
@@ -12,18 +16,6 @@ class _RiderHomePageState extends State<RiderHomePage> {
   final _search = TextEditingController();
   int _navIndex = 0;
 
-  final List<_OrderItem> _orders = const [
-    _OrderItem(
-      name: 'ปลากระป๋อง',
-      imageUrl: 'https://picsum.photos/seed/can/200',
-    ),
-    _OrderItem(
-      name: 'มาม่า',
-      imageUrl: 'https://picsum.photos/seed/noodle/200',
-    ),
-    _OrderItem(name: 'ไข่ไก่', imageUrl: 'https://picsum.photos/seed/egg/200'),
-  ];
-
   @override
   void dispose() {
     _search.dispose();
@@ -32,16 +24,21 @@ class _RiderHomePageState extends State<RiderHomePage> {
 
   @override
   Widget build(BuildContext context) {
-    // สีตามดีไซน์
     const bg = Color(0xFFD2C2F1);
     const cardBg = Color(0xFFF4EBFF);
     const borderCol = Color(0x55000000);
 
-    // กรองตามคำค้น
+    final auth = context.watch<AuthProvider>();
+    final RiderData? rider = auth.currentRider;
+
+    if (rider == null) {
+      return const Scaffold(
+        backgroundColor: bg,
+        body: SafeArea(child: Center(child: CircularProgressIndicator())),
+      );
+    }
+
     final q = _search.text.trim().toLowerCase();
-    final filtered = _orders
-        .where((o) => o.name.toLowerCase().contains(q))
-        .toList();
 
     return Scaffold(
       backgroundColor: bg,
@@ -51,7 +48,6 @@ class _RiderHomePageState extends State<RiderHomePage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // ทักทาย + avatar
               Row(
                 children: [
                   CircleAvatar(
@@ -59,31 +55,47 @@ class _RiderHomePageState extends State<RiderHomePage> {
                     backgroundColor: Colors.white,
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(999),
-                      child: Image.network(
-                        'https://i.pravatar.cc/100?img=5',
-                        errorBuilder: (context, error, st) =>
-                            const Icon(Icons.person),
-                      ),
+                      child: (rider.riderImage.isEmpty)
+                          ? const Icon(Icons.person)
+                          : Image.network(
+                              rider.riderImage,
+                              errorBuilder: (_, __, ___) =>
+                                  const Icon(Icons.person),
+                            ),
                     ),
                   ),
                   const SizedBox(width: 12),
-                  Text(
-                    'สวัสดี, ${widget.riderName}',
-                    style: const TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.w700,
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'สวัสดี, ${rider.name}',
+                          style: const TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        if (rider.plateNo.isNotEmpty)
+                          Text(
+                            'ทะเบียน: ${rider.plateNo}',
+                            style: const TextStyle(
+                              fontSize: 13,
+                              color: Colors.black54,
+                            ),
+                          ),
+                      ],
                     ),
                   ),
                 ],
               ),
               const SizedBox(height: 12),
 
-              // ช่องค้นหา
               TextField(
                 controller: _search,
                 onChanged: (_) => setState(() {}),
                 decoration: InputDecoration(
-                  hintText: 'ค้นหา......',
+                  hintText: 'ค้นหาออเดอร์...',
                   prefixIcon: const Icon(Icons.search),
                   filled: true,
                   fillColor: Colors.white,
@@ -101,28 +113,56 @@ class _RiderHomePageState extends State<RiderHomePage> {
               const SizedBox(height: 16),
 
               const Text(
-                'รายการออเดอร์ :',
+                'รายการออเดอร์ทั้งหมด :',
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
               ),
               const SizedBox(height: 10),
 
-              // การ์ดออเดอร์ (กดได้ทั้งใบ)
-              ...filtered.map(
-                (o) => _OrderCard(item: o, onTap: () => _confirmOrder(o)),
-              ),
+              StreamBuilder<List<Product>>(
+                stream: _availableOrdersStream(),
+                builder: (context, snap) {
+                  if (snap.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+                  if (snap.hasError) {
+                    return const Text('ไม่สามารถโหลดรายการสินค้าได้');
+                  }
 
-              if (filtered.isEmpty)
-                Container(
-                  margin: const EdgeInsets.only(top: 32),
-                  alignment: Alignment.center,
-                  child: const Text('ไม่พบออเดอร์ที่ตรงกับคำค้น'),
-                ),
+                  final all = snap.data ?? [];
+                  final filtered = (q.isEmpty)
+                      ? all
+                      : all
+                            .where(
+                              (p) =>
+                                  p.name.toLowerCase().contains(q) ||
+                                  p.productId.toString().contains(q),
+                            )
+                            .toList();
+
+                  if (filtered.isEmpty) {
+                    return const Padding(
+                      padding: EdgeInsets.only(top: 32),
+                      child: Center(
+                        child: Text('ไม่มีออเดอร์ที่รอรับในขณะนี้'),
+                      ),
+                    );
+                  }
+
+                  return ListView.separated(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: filtered.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 8),
+                    itemBuilder: (_, i) =>
+                        _ProductCardFromModel(product: filtered[i]),
+                  );
+                },
+              ),
             ],
           ),
         ),
       ),
 
-      // แถบล่าง
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _navIndex,
         type: BottomNavigationBarType.fixed,
@@ -144,97 +184,62 @@ class _RiderHomePageState extends State<RiderHomePage> {
     );
   }
 
-  Future<void> _confirmOrder(_OrderItem item) async {
-    final bool? ok = await showDialog<bool>(
-      context: context,
-      barrierDismissible: true,
-      builder: (ctx) => Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        backgroundColor: const Color(0xFFC9A9F5),
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 20, 16, 16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text(
-                'คุณต้องการรับออเดอร์นี้หรือไม่',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 20),
-              Row(
-                children: [
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () => Navigator.pop(ctx, false),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.black87,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        elevation: 0,
-                      ),
-                      child: const Text('ยกเลิก'),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () => Navigator.pop(ctx, true),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.black87,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        elevation: 0,
-                      ),
-                      child: const Text('ยืนยัน'),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
+  Stream<List<Product>> _availableOrdersStream() async* {
+    final db = FirebaseFirestore.instance;
 
-    // ทดสอบ: แจ้งผลด้วย SnackBar แล้วอยู่หน้าเดิม
-    if (!mounted) return;
-    if (ok == true) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('ยืนยันออเดอร์: ${item.name}')));
-    } else if (ok == false) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('ยกเลิก')));
+    await for (final orderSnap
+        in db
+            .collection('orders')
+            .where('current_status', isEqualTo: 1)
+            .where('is_active', isEqualTo: false)
+            .snapshots()) {
+      final orderIds = orderSnap.docs
+          .map((d) => (d.data()['order_id'] as num?)?.toInt())
+          .whereType<int>()
+          .toList();
+
+      if (orderIds.isEmpty) {
+        yield const <Product>[];
+        continue;
+      }
+
+      final List<Product> all = [];
+      final productsCol = db.collection('products');
+
+      for (var i = 0; i < orderIds.length; i += 10) {
+        final chunk = orderIds.sublist(
+          i,
+          (i + 10 > orderIds.length) ? orderIds.length : i + 10,
+        );
+
+        final prodSnap = await productsCol
+            .where('order_id', whereIn: chunk)
+            .get();
+        all.addAll(prodSnap.docs.map(Product.fromDoc));
+      }
+
+      all.sort((a, b) => b.productId.compareTo(a.productId));
+      yield all;
     }
   }
 }
 
-class _OrderItem {
-  final String name;
-  final String imageUrl;
-  const _OrderItem({required this.name, required this.imageUrl});
-}
-
-class _OrderCard extends StatelessWidget {
-  const _OrderCard({required this.item, this.onTap});
-  final _OrderItem item;
-  final VoidCallback? onTap;
+class _ProductCardFromModel extends StatelessWidget {
+  final Product product;
+  const _ProductCardFromModel({required this.product});
 
   @override
   Widget build(BuildContext context) {
     const borderCol = Color(0x55000000);
 
     return InkWell(
-      onTap: onTap,
+      onTap: () {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('เลือกรับงาน: ${product.name}')));
+      },
       borderRadius: BorderRadius.circular(12),
       child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
         decoration: BoxDecoration(
           color: const Color(0xFFF4EBFF),
           borderRadius: BorderRadius.circular(12),
@@ -246,11 +251,11 @@ class _OrderCard extends StatelessWidget {
             ClipRRect(
               borderRadius: BorderRadius.circular(10),
               child: Image.network(
-                item.imageUrl,
+                product.imageUrl,
                 width: 64,
                 height: 64,
                 fit: BoxFit.cover,
-                errorBuilder: (c, e, s) => Container(
+                errorBuilder: (_, __, ___) => Container(
                   width: 64,
                   height: 64,
                   color: Colors.white,
@@ -261,7 +266,7 @@ class _OrderCard extends StatelessWidget {
             const SizedBox(width: 14),
             Expanded(
               child: Text(
-                item.name,
+                product.name.isEmpty ? '(ไม่มีชื่อสินค้า)' : product.name,
                 style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w700,

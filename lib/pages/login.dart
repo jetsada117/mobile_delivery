@@ -1,7 +1,7 @@
-import 'dart:developer';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:mobile_delivery/models/rider_data.dart';
 import 'package:mobile_delivery/models/user_data.dart';
 import 'package:mobile_delivery/pages/chooserole.dart';
 import 'package:mobile_delivery/pages/rider_pages/rider_home.dart';
@@ -209,10 +209,13 @@ class _LoginPageState extends State<LoginPage> {
           .get();
 
       if (riderSnap.docs.isNotEmpty) {
-        final riderData = riderSnap.docs.first.data();
-        log("Login success as Rider: $riderData");
+        final doc = riderSnap.docs.first;
+        final data = doc.data();
 
-        Get.snackbar("สำเร็จ", "เข้าสู่ระบบในฐานะ Rider");
+        final rider = RiderData.fromMap(doc.id, data);
+        context.read<AuthProvider>().setRider(rider);
+
+        Get.snackbar("สำเร็จ", "เข้าสู่ระบบในฐานะผู้ส่งสินค้า");
 
         Get.to(() => const RiderHomePage());
         return;
@@ -228,7 +231,6 @@ class _LoginPageState extends State<LoginPage> {
       if (userSnap.docs.isNotEmpty) {
         final doc = userSnap.docs.first;
         final data = doc.data();
-        log("Login success as Rider: $data");
 
         final user = UserData.fromMap(doc.id, data);
         context.read<AuthProvider>().setUser(user);

@@ -1,4 +1,3 @@
-// lib/pages/rider/rider_pickup_page.dart
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -48,7 +47,10 @@ class RiderPickupPage extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: const [
                     _StatusPill(icon: Icons.location_on_outlined), // << เขียว
-                    _StatusPill(icon: Icons.check_circle_outline, iconColor: Colors.green),
+                    _StatusPill(
+                      icon: Icons.check_circle_outline,
+                      iconColor: Colors.green,
+                    ),
                     _StatusPill(icon: Icons.local_shipping_outlined),
                     _StatusPill(icon: Icons.home_outlined),
                   ],
