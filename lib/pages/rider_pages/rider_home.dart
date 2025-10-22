@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:mobile_delivery/pages/rider_pages/rider_profile_page.dart';
 import 'package:provider/provider.dart';
 import 'package:mobile_delivery/models/product_data.dart';
 import 'package:mobile_delivery/models/rider_data.dart';
@@ -169,7 +170,22 @@ class _RiderHomePageState extends State<RiderHomePage> {
         selectedItemColor: Colors.black,
         unselectedItemColor: Colors.black54,
         backgroundColor: cardBg,
-        onTap: (i) => setState(() => _navIndex = i),
+        onTap: (i) {
+          if (i == _navIndex) return; // กดซ้ำไม่ต้องทำอะไร
+          setState(() => _navIndex = i);
+
+          if (i == 0) {
+            // หน้าหลัก: อยู่หน้านี้แล้ว ไม่ต้องนำทาง
+            return;
+          }
+
+          if (i == 1) {
+            // ไปหน้าโปรไฟล์ไรเดอร์
+            Navigator.of(
+              context,
+            ).push(MaterialPageRoute(builder: (_) => const RiderProfilePage()));
+          }
+        },
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.home_outlined),
