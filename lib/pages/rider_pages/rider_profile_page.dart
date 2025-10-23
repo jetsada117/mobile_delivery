@@ -75,17 +75,6 @@ class _RiderProfilePageState extends State<RiderProfilePage> {
                             ),
                           ),
                           const SizedBox(height: 12),
-                          Text(
-                            rider.name,
-                            style: const TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                          Text(
-                            'โทร: ${rider.phone}',
-                            style: const TextStyle(color: Colors.black54),
-                          ),
                         ],
                       ),
                     ),
