@@ -154,8 +154,12 @@ class _RiderHomePageState extends State<RiderHomePage> {
                     physics: const NeverScrollableScrollPhysics(),
                     itemCount: filtered.length,
                     separatorBuilder: (_, __) => const SizedBox(height: 8),
-                    itemBuilder: (_, i) =>
-                        _ProductCardFromModel(product: filtered[i]),
+                    itemBuilder: (_, i) => _ProductCardFromModel(
+                      product: filtered[i],
+                      riderId: rider.id, // << ส่ง riderId ลงไป
+                      onAccept: (p) =>
+                          _acceptOrder(p, rider.id), // << callback กดรับงาน
+                    ),
                   );
                 },
               ),
@@ -171,16 +175,14 @@ class _RiderHomePageState extends State<RiderHomePage> {
         unselectedItemColor: Colors.black54,
         backgroundColor: cardBg,
         onTap: (i) {
-          if (i == _navIndex) return; // กดซ้ำไม่ต้องทำอะไร
+          if (i == _navIndex) return;
           setState(() => _navIndex = i);
 
           if (i == 0) {
-            // หน้าหลัก: อยู่หน้านี้แล้ว ไม่ต้องนำทาง
             return;
           }
 
           if (i == 1) {
-            // ไปหน้าโปรไฟล์ไรเดอร์
             Navigator.of(
               context,
             ).push(MaterialPageRoute(builder: (_) => const RiderProfilePage()));
@@ -238,21 +240,70 @@ class _RiderHomePageState extends State<RiderHomePage> {
       yield all;
     }
   }
+
+  Future<void> _acceptOrder(Product product, String riderId) async {
+    final bool? ok = await showDialog<bool>(
+      context: context,
+      barrierDismissible: true,
+      builder: (ctx) => AlertDialog(
+        title: const Text('ยืนยันการรับงาน'),
+        content: Text('คุณต้องการรับงาน “${product.name}” ใช่หรือไม่?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('ยกเลิก'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('ยืนยัน'),
+          ),
+        ],
+      ),
+    );
+
+    if (ok != true) return;
+
+    try {
+      final docId = product.orderId.toString();
+      await FirebaseFirestore.instance.collection('orders').doc(docId).update({
+        'rider_id': riderId,
+        'current_status': 2,
+        'is_active': true,
+        'updated_at': FieldValue.serverTimestamp(),
+      });
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('รับงานสำเร็จ: ${product.name}')));
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('รับงานไม่สำเร็จ: $e')));
+    }
+  }
 }
 
 class _ProductCardFromModel extends StatelessWidget {
   final Product product;
-  const _ProductCardFromModel({required this.product});
+  final String riderId;
+  final Future<void> Function(Product) onAccept;
+
+  const _ProductCardFromModel({
+    required this.product,
+    required this.riderId,
+    required this.onAccept,
+  });
 
   @override
   Widget build(BuildContext context) {
     const borderCol = Color(0x55000000);
 
     return InkWell(
-      onTap: () {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('เลือกรับงาน: ${product.name}')));
+      onTap: () async {
+        // กดทั้งใบ = รับงาน
+        await onAccept(product);
       },
       borderRadius: BorderRadius.circular(12),
       child: Container(
@@ -289,6 +340,8 @@ class _ProductCardFromModel extends StatelessWidget {
                 ),
               ),
             ),
+            // ไอคอนสื่อว่า "กดเพื่อรับงาน"
+            const Icon(Icons.check_circle_outline),
           ],
         ),
       ),
