@@ -9,7 +9,6 @@ class OrderRecord {
   final String? receiveId;
   final String? riderId;
 
-  /// path ของ doc address (อาจมาจาก String หรือ DocumentReference)
   final String? sendAt;
   final String? receiveAt;
 
@@ -27,8 +26,8 @@ class OrderRecord {
 
   static String? _asPath(dynamic v) {
     if (v == null) return null;
-    if (v is DocumentReference) return v.path; // แปลง ref → path
-    if (v is String) return v; // คงเดิมถ้าเป็นสตริงอยู่แล้ว
+    if (v is DocumentReference) return v.path;
+    if (v is String) return v;
     return null;
   }
 

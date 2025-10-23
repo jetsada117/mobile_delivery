@@ -1,17 +1,18 @@
-import 'package:flutter/material.dart';
-import 'package:get/get.dart';
-import 'package:latlong2/latlong.dart';
-import 'package:mobile_delivery/models/send_item_view.dart';
-import 'package:mobile_delivery/pages/user_pages/user_receiveditems.dart';
-import 'package:mobile_delivery/pages/user_pages/user_combined_map.dart';
-import 'package:mobile_delivery/pages/user_pages/user_home.dart';
-import 'package:mobile_delivery/pages/user_pages/user_profile.dart';
-import 'package:mobile_delivery/pages/user_pages/user_rider_map.dart';
-import 'package:mobile_delivery/pages/user_pages/user_statuschat.dart';
-import 'package:mobile_delivery/providers/auth_provider.dart';
-import 'package:mobile_delivery/repositories/send_item_view.dart';
-import 'package:mobile_delivery/utils/functions.dart';
-import 'package:provider/provider.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/material.dart'; //ขอ A นะครับ จุ๊บม๊วฟ
+import 'package:get/get.dart'; //ขอ A นะครับ จุ๊บม๊วฟ
+import 'package:latlong2/latlong.dart'; //ขอ A นะครับ จุ๊บม๊วฟ
+import 'package:mobile_delivery/models/send_item_view.dart'; //ขอ A นะครับ จุ๊บม๊วฟ
+import 'package:mobile_delivery/pages/user_pages/user_receiveditems.dart'; //ขอ A นะครับ จุ๊บม๊วฟ
+import 'package:mobile_delivery/pages/user_pages/user_combined_map.dart'; //ขอ A นะครับ จุ๊บม๊วฟ
+import 'package:mobile_delivery/pages/user_pages/user_home.dart'; //ขอ A นะครับ จุ๊บม๊วฟ
+import 'package:mobile_delivery/pages/user_pages/user_profile.dart'; //ขอ A นะครับ จุ๊บม๊วฟ
+import 'package:mobile_delivery/pages/user_pages/user_rider_map.dart'; //ขอ A นะครับ จุ๊บม๊วฟ
+import 'package:mobile_delivery/pages/user_pages/user_statuschat.dart'; //ขอ A นะครับ จุ๊บม๊วฟ
+import 'package:mobile_delivery/providers/auth_provider.dart'; //ขอ A นะครับ จุ๊บม๊วฟ
+import 'package:mobile_delivery/repositories/send_item_view.dart'; //ขอ A นะครับ จุ๊บม๊วฟ
+import 'package:mobile_delivery/utils/functions.dart'; //ขอ A นะครับ จุ๊บม๊วฟ
+import 'package:provider/provider.dart'; //ขอ A นะครับ จุ๊บม๊วฟ
 
 class SentItemsPage extends StatefulWidget {
   const SentItemsPage({super.key});
@@ -89,6 +90,40 @@ class _SentItemsPageState extends State<SentItemsPage> {
                         () => StatusChatPage(
                           orderId: v.order.orderId,
                           title: "สถานะสินค้าที่ส่ง",
+                        ),
+                      );
+                    },
+                    onMapTap: () async {
+                      final sender = await _latLngFromPath(v.order.sendAt);
+                      final receiver = await _latLngFromPath(v.order.receiveAt);
+
+                      if (sender == null || receiver == null) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('ไม่พบพิกัดที่อยู่ผู้ส่งหรือผู้รับ'),
+                          ),
+                        );
+                        return;
+                      }
+
+                      // ถ้ามีข้อมูลไรเดอร์ครบ (lat,lng) ค่อยสร้าง LatLng ไม่งั้นให้เป็น null
+                      LatLng? riderLatLng;
+                      if (v.rider != null &&
+                          v.rider!.lat != null &&
+                          v.rider!.lng != null) {
+                        riderLatLng = LatLng(v.rider!.lat!, v.rider!.lng!);
+                      }
+
+                      Get.to(
+                        () => RiderMapPage(
+                          riderLatLng: riderLatLng, // <-- อาจเป็น null
+                          senderLatLng: sender,
+                          receiverLatLng: receiver,
+                          riderName: v.rider?.name,
+                          phone: v.rider?.phone,
+                          plate: v.rider?.plateNo,
+                          avatarUrl: v.rider?.riderImage,
+                          statusText: status,
                         ),
                       );
                     },
@@ -184,6 +219,17 @@ class _SentItemsPageState extends State<SentItemsPage> {
       ),
     );
   }
+
+  Future<LatLng?> _latLngFromPath(String? path) async {
+    if (path == null || path.isEmpty) return null;
+    final snap = await FirebaseFirestore.instance.doc(path).get();
+    if (!snap.exists) return null;
+    final data = snap.data() as Map<String, dynamic>;
+    final lat = (data['lat'] as num?)?.toDouble();
+    final lng = (data['lng'] as num?)?.toDouble();
+    if (lat == null || lng == null) return null;
+    return LatLng(lat, lng);
+  }
 }
 
 class _SentItem {
@@ -201,15 +247,18 @@ class _SentItem {
 }
 
 class _SentCard extends StatelessWidget {
-  const _SentCard({required this.item, required this.onTap});
-
+  const _SentCard({
+    required this.item,
+    required this.onTap,
+    required this.onMapTap,
+  });
   final _SentItem item;
   final VoidCallback onTap;
+  final VoidCallback onMapTap;
 
   @override
   Widget build(BuildContext context) {
     const borderCol = Color(0x55000000);
-
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -269,18 +318,7 @@ class _SentCard extends StatelessWidget {
               SizedBox(
                 height: 32,
                 child: ElevatedButton.icon(
-                  onPressed: () {
-                    Get.to(
-                      () => RiderMapPage(
-                        latLng: const LatLng(16.2458, 103.2500),
-                        riderName: 'นายสมชาย เดลิเวอรี่',
-                        statusText: item.status,
-                        phone: '012-345-6789',
-                        plate: '8กพ 877',
-                        avatarUrl: item.imageUrl,
-                      ),
-                    );
-                  },
+                  onPressed: onMapTap,
                   icon: const Icon(Icons.location_on_outlined, size: 16),
                   label: const Text('แผนที่', style: TextStyle(fontSize: 12)),
                   style: ElevatedButton.styleFrom(

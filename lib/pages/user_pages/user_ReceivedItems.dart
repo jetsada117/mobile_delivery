@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:latlong2/latlong.dart';
@@ -89,6 +90,43 @@ class _ReceivedItemsPageState extends State<ReceivedItemsPage> {
                         () => StatusChatPage(
                           orderId: v.order.orderId,
                           title: 'สถานะสินค้าที่ได้รับ',
+                        ),
+                      );
+                    },
+                    onMapTap: () async {
+                      final senderLatLng = await _latLngFromPath(
+                        v.order.sendAt,
+                      );
+                      final receiverLatLng = await _latLngFromPath(
+                        v.order.receiveAt,
+                      );
+
+                      if (senderLatLng == null || receiverLatLng == null) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('ไม่พบพิกัดที่อยู่ผู้ส่งหรือผู้รับ'),
+                          ),
+                        );
+                        return;
+                      }
+
+                      LatLng? riderLatLng;
+                      if (v.rider != null &&
+                          v.rider!.lat != null &&
+                          v.rider!.lng != null) {
+                        riderLatLng = LatLng(v.rider!.lat!, v.rider!.lng!);
+                      }
+
+                      Get.to(
+                        () => RiderMapPage(
+                          riderLatLng: riderLatLng,
+                          senderLatLng: senderLatLng,
+                          receiverLatLng: receiverLatLng,
+                          riderName: v.rider?.name,
+                          phone: v.rider?.phone,
+                          plate: v.rider?.plateNo,
+                          avatarUrl: v.rider?.riderImage,
+                          statusText: status,
                         ),
                       );
                     },
@@ -184,6 +222,21 @@ class _ReceivedItemsPageState extends State<ReceivedItemsPage> {
       ),
     );
   }
+
+  Future<LatLng?> _latLngFromPath(String? path) async {
+    if (path == null || path.isEmpty) return null;
+    try {
+      final snap = await FirebaseFirestore.instance.doc(path).get();
+      if (!snap.exists) return null;
+      final data = snap.data() as Map<String, dynamic>;
+      final lat = (data['lat'] as num?)?.toDouble();
+      final lng = (data['lng'] as num?)?.toDouble();
+      if (lat == null || lng == null) return null;
+      return LatLng(lat, lng);
+    } catch (_) {
+      return null;
+    }
+  }
 }
 
 class _ReceivedItem {
@@ -200,9 +253,11 @@ class _ReceivedItem {
 }
 
 class _ReceivedCard extends StatelessWidget {
-  const _ReceivedCard({required this.item, this.onTap});
+  const _ReceivedCard({required this.item, this.onTap, required this.onMapTap});
+
   final _ReceivedItem item;
   final VoidCallback? onTap;
+  final VoidCallback onMapTap;
 
   @override
   Widget build(BuildContext context) {
@@ -267,12 +322,13 @@ class _ReceivedCard extends StatelessWidget {
                 onPressed: () {
                   Get.to(
                     () => RiderMapPage(
-                      latLng: const LatLng(16.2458, 103.2500),
+                      riderLatLng: LatLng(16.2458, 103.2500),
+                      senderLatLng: LatLng(16.2430, 103.2480),
+                      receiverLatLng: LatLng(16.2400, 103.2550),
                       riderName: 'นายสมชาย เดลิเวอรี่',
-                      statusText: item.status,
-                      phone: '012-345-6789',
+                      phone: '099-999-9999',
                       plate: '8กพ 877',
-                      avatarUrl: item.imageUrl,
+                      statusText: '[3] กำลังจัดส่ง',
                     ),
                   );
                 },
