@@ -171,7 +171,10 @@ class _SendParcelPageState extends State<SendParcelPage> {
               ),
               const SizedBox(height: 12),
 
-              if (_recipient != null) _recipientCard(_recipient!, _addresses),
+              if (_recipient != null)
+                _recipientCard(_recipient!, _addresses)
+              else
+                _allUsersList(),
 
               const SizedBox(height: 16),
             ],
@@ -416,6 +419,107 @@ class _SendParcelPageState extends State<SendParcelPage> {
     );
   }
 
+  Widget _allUsersList() {
+    final myUid = context.read<AuthProvider>().currentUser?.uid ?? '';
+
+    // หมายเหตุ: เพื่อเลี่ยงข้อจำกัด notEqualTo + orderBy เราดึงทั้งหมดแล้วคัดกรองฝั่ง client
+    // (ถ้าข้อมูลเยอะค่อยปรับเป็น query ตามต้องการ)
+    return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+      stream: FirebaseFirestore.instance
+          .collection('users')
+          .orderBy('name') // เรียงอ่านง่าย
+          .snapshots(),
+      builder: (context, snap) {
+        if (snap.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        if (snap.hasError) {
+          return const Text('โหลดรายชื่อผู้ใช้ไม่สำเร็จ');
+        }
+
+        final docs = (snap.data?.docs ?? [])
+            .where((d) => d.id != myUid) // ตัดตัวเองออก
+            .toList();
+
+        if (docs.isEmpty) {
+          return const Text('ยังไม่มีผู้ใช้อื่นในระบบ');
+        }
+
+        return ListView.separated(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: docs.length,
+          separatorBuilder: (_, __) => const SizedBox(height: 8),
+          itemBuilder: (_, i) {
+            final data = docs[i].data();
+            final user = UserData.fromMap(docs[i].id, data);
+
+            return InkWell(
+              onTap: () async {
+                setState(() => _isSearching = true);
+                try {
+                  await _loadRecipientFromDoc(docs[i]);
+                  Get.snackbar('สำเร็จ', 'เลือกผู้รับ: ${user.name}');
+                } catch (e) {
+                  Get.snackbar('ผิดพลาด', 'โหลดข้อมูลผู้รับไม่สำเร็จ: $e');
+                  setState(() => _isSearching = false);
+                }
+              },
+              borderRadius: BorderRadius.circular(12),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: cardBg,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: borderCol),
+                ),
+                padding: const EdgeInsets.all(10),
+                child: Row(
+                  children: [
+                    CircleAvatar(
+                      backgroundColor: Colors.white,
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(999),
+                        child: Image.network(
+                          user.imageUrl,
+                          width: 40,
+                          height: 40,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) =>
+                              const Icon(Icons.person),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            user.name.isEmpty ? '(ไม่มีชื่อ)' : user.name,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            'โทร: ${user.phone}',
+                            style: const TextStyle(color: Colors.black54),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Icon(Icons.chevron_right),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
   Future<String> _archiveProductImageToDelivery({
     required String imageUrl,
     required int orderId,
@@ -504,5 +608,24 @@ class _SendParcelPageState extends State<SendParcelPage> {
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
+  }
+
+  Future<void> _loadRecipientFromDoc(
+    DocumentSnapshot<Map<String, dynamic>> doc,
+  ) async {
+    final user = UserData.fromMap(doc.id, doc.data()!);
+    final addrSnap = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .collection('addresses')
+        .get();
+    final addrList = addrSnap.docs.map(UserAddress.fromDoc).toList();
+
+    setState(() {
+      _recipient = user;
+      _addresses = addrList;
+      _selectedAddressId = null;
+      _isSearching = false;
+    });
   }
 }
