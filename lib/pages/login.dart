@@ -214,6 +214,8 @@ class _LoginPageState extends State<LoginPage> {
 
         final rider = RiderData.fromMap(doc.id, data);
         context.read<AuthProvider>().setRider(rider);
+        final auth = Provider.of<AuthProvider>(context, listen: false);
+        auth.startRiderLocationTracking();
 
         Get.snackbar("สำเร็จ", "เข้าสู่ระบบในฐานะผู้ส่งสินค้า");
 

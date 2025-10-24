@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:mobile_delivery/pages/rider_pages/rider_delivery_status_page.dart';
+import 'package:mobile_delivery/pages/rider_pages/rider_acceptorder.dart';
 import 'package:mobile_delivery/pages/rider_pages/rider_profile_page.dart';
 import 'package:provider/provider.dart';
 import 'package:mobile_delivery/models/product_data.dart';
@@ -157,7 +157,7 @@ class _RiderHomePageState extends State<RiderHomePage> {
                     separatorBuilder: (_, __) => const SizedBox(height: 8),
                     itemBuilder: (_, i) => _ProductCardFromModel(
                       product: filtered[i],
-                      onTap: () => _acceptOrder(filtered[i], rider.id),
+                      onTap: () => _openOrder(filtered[i]),
                     ),
                   );
                 },
@@ -240,51 +240,14 @@ class _RiderHomePageState extends State<RiderHomePage> {
     }
   }
 
-  Future<void> _acceptOrder(Product product, String riderId) async {
-    final bool? ok = await showDialog<bool>(
-      context: context,
-      barrierDismissible: true,
-      builder: (ctx) => AlertDialog(
-        title: const Text('ยืนยันการรับงาน'),
-        content: Text('คุณต้องการรับงาน “${product.name}” ใช่หรือไม่?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('ยกเลิก'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('ยืนยัน'),
-          ),
-        ],
+  void _openOrder(Product product) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) =>
+            RiderAcceptOrderPage(orderId: product.orderId.toString()),
       ),
     );
-
-    if (ok != true) return;
-
-    try {
-      final docId = product.orderId.toString();
-      await FirebaseFirestore.instance.collection('orders').doc(docId).update({
-        'rider_id': riderId,
-        'current_status': 1,
-        'is_active': false,
-        'updated_at': FieldValue.serverTimestamp(),
-      });
-
-      if (!mounted) return;
-
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (_) => RiderDeliveryStatusPage(orderId: docId),
-        ),
-      );
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('รับงานไม่สำเร็จ: $e')));
-    }
   }
 }
 
