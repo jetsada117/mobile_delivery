@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
@@ -23,9 +24,9 @@ class AuthProvider extends ChangeNotifier {
   bool get isLoggedIn => isUserLoggedIn || isRiderLoggedIn;
 
   void setUser(UserData user) {
+    stopRiderLocationTracking();
     _currentUser = user;
     _currentRider = null;
-    stopRiderLocationTracking();
     notifyListeners();
   }
 
@@ -33,21 +34,25 @@ class AuthProvider extends ChangeNotifier {
     _currentRider = rider;
     _currentUser = null;
     notifyListeners();
-    startRiderLocationTracking();
   }
 
   void clear() {
+    stopRiderLocationTracking();
     _currentUser = null;
     _currentRider = null;
-    stopRiderLocationTracking();
     notifyListeners();
   }
 
   void startRiderLocationTracking() async {
+    // ไม่มีไรเดอร์ก็ไม่ต้องเริ่ม
     if (_currentRider == null) return;
-    if (_posSub != null) return;
 
-    LocationPermission perm = await Geolocator.checkPermission();
+    // ถ้ามีสตรีมเก่าอยู่ ให้ปิดก่อนเพื่อความชัวร์
+    await _posSub?.cancel();
+    _posSub = null;
+
+    // ตรวจสิทธิ์ตำแหน่ง
+    var perm = await Geolocator.checkPermission();
     if (perm == LocationPermission.denied) {
       perm = await Geolocator.requestPermission();
     }
@@ -61,48 +66,58 @@ class AuthProvider extends ChangeNotifier {
       distanceFilter: 1,
     );
 
-    _posSub = Geolocator.getPositionStream(locationSettings: settings).listen((
-      pos,
-    ) async {
-      _riderLat = pos.latitude;
-      _riderLng = pos.longitude;
-      notifyListeners();
+    _posSub = Geolocator.getPositionStream(locationSettings: settings).listen(
+      (pos) async {
+        // อัปเดตค่าใน provider ให้ UI ใช้
+        _riderLat = pos.latitude;
+        _riderLng = pos.longitude;
+        notifyListeners();
 
-      try {
-        await FirebaseFirestore.instance
-            .collection('riders')
-            .doc(_currentRider!.id)
-            .update({
-              'lat': pos.latitude,
-              'lng': pos.longitude,
-              'updated_at': FieldValue.serverTimestamp(),
-            });
-      } catch (e) {
-        debugPrint('⚠️ อัปเดตตำแหน่งล้มเหลว: $e');
-      }
-    });
+        // กัน null แบบปลอดภัยทุกครั้งก่อนยิงขึ้น Firestore
+        final rid = _currentRider?.id;
+        if (rid == null) {
+          // ถูกสลับบทบาท/ล็อกเอาต์ระหว่างสตรีม → หยุดสตรีม
+          debugPrint('ℹ️ currentRider ว่างระหว่างอัปเดตตำแหน่ง: หยุดติดตาม');
+          await _posSub?.cancel();
+          _posSub = null;
+          return;
+        }
+
+        try {
+          await FirebaseFirestore.instance
+              .collection('riders')
+              .doc(rid)
+              .update({
+                'lat': pos.latitude,
+                'lng': pos.longitude,
+                'updated_at': FieldValue.serverTimestamp(),
+              });
+        } catch (e) {
+          debugPrint('⚠️ อัปเดตตำแหน่งล้มเหลว: $e');
+        }
+      },
+      onError: (e) => debugPrint('⚠️ สตรีมตำแหน่ง error: $e'),
+      cancelOnError: false,
+    );
   }
 
-  Future<void> updateRiderLocation({
-    required double lat,
-    required double lng,
-  }) async {
-    if (_currentRider == null) return;
-    _riderLat = lat;
-    _riderLng = lng;
-    notifyListeners();
-    await FirebaseFirestore.instance
-        .collection('riders')
-        .doc(_currentRider!.id)
-        .update({
-          'lat': lat,
-          'lng': lng,
-          'updated_at': FieldValue.serverTimestamp(),
-        });
+  Future<void> updateRiderLocation(Position pos) async {
+    final rid = currentRider?.id;
+    if (rid == null) {
+      debugPrint('⚠️ currentRider ยังไม่มีข้อมูล ข้ามการอัปเดตตำแหน่ง');
+      return;
+    }
+    await FirebaseFirestore.instance.collection('riders').doc(rid).update({
+      'lat': pos.latitude,
+      'lng': pos.longitude,
+      'updated_at': FieldValue.serverTimestamp(),
+    });
+    debugPrint('✅ อัปเดตตำแหน่งไรเดอร์เรียบร้อย');
   }
 
   void stopRiderLocationTracking() {
     _posSub?.cancel();
     _posSub = null;
+    debugPrint('🛑 หยุดติดตามตำแหน่งไรเดอร์');
   }
 }

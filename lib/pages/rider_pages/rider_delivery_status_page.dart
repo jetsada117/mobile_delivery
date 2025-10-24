@@ -4,10 +4,14 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:get/get.dart';
+import 'package:get/get_core/src/get_main.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:mobile_delivery/pages/rider_pages/rider_home.dart';
 import 'package:mobile_delivery/providers/auth_provider.dart';
 import 'package:provider/provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class RiderDeliveryStatusPage extends StatefulWidget {
   final String orderId;
@@ -23,6 +27,8 @@ class _RiderDeliveryStatusPageState extends State<RiderDeliveryStatusPage> {
   static const cardBg = Color(0xFFF4EBFF);
   static const borderCol = Color(0x55000000);
   final MapController _mapController = MapController();
+  final supa = Supabase.instance.client;
+  int currentStatus = 0;
 
   final _picker = ImagePicker();
 
@@ -121,32 +127,37 @@ class _RiderDeliveryStatusPageState extends State<RiderDeliveryStatusPage> {
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: borderCol),
                 ),
-                child: const Row(
+                child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     _StatusPill(
                       icon: Icons.location_on_outlined,
-                      iconColor: Colors.green,
+                      iconColor: currentStatus == 2
+                          ? Colors.yellow
+                          : Colors.grey[800]!,
                     ),
-                    _StatusPill(icon: Icons.check_circle_outline),
-                    _StatusPill(icon: Icons.local_shipping_outlined),
+                    _StatusPill(
+                      icon: Icons.check_circle_outline,
+                      iconColor: currentStatus == 3
+                          ? Colors.yellow
+                          : Colors.grey[800]!,
+                    ),
+                    _StatusPill(
+                      icon: Icons.local_shipping_outlined,
+                      iconColor: currentStatus == 4
+                          ? Colors.yellow
+                          : Colors.grey[800]!,
+                    ),
                   ],
                 ),
               ),
             ),
           ),
           Positioned(
-            left: 24,
-            bottom: 140,
-            child: _CameraButton(
-              onTap: () => _openProofPopup(context, 'รับออเดอร์'),
-            ),
-          ),
-          Positioned(
             right: 24,
             bottom: 140,
             child: _CameraButton(
-              onTap: () => _openProofPopup(context, 'จัดส่งสำเร็จ'),
+              onTap: () => _openProofPopup(context, 'อัปโหลดภาพ'),
             ),
           ),
           Positioned(
@@ -194,6 +205,57 @@ class _RiderDeliveryStatusPageState extends State<RiderDeliveryStatusPage> {
               ),
             ),
           ),
+
+          if (currentStatus == 4)
+            Positioned(
+              left: 20,
+              right: 20,
+              bottom: 80,
+              child: SizedBox(
+                height: 48,
+                child: ElevatedButton.icon(
+                  icon: const Icon(Icons.flag_circle_outlined),
+                  label: const Text(
+                    'จบออเดอร์',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.yellow[700],
+                    foregroundColor: Colors.black,
+                    elevation: 2,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  onPressed: () async {
+                    try {
+                      final orderRef = FirebaseFirestore.instance
+                          .collection('orders')
+                          .doc(widget.orderId);
+
+                      await orderRef.update({
+                        'is_active': false,
+                        'current_status': 4,
+                        'updated_at': FieldValue.serverTimestamp(),
+                      });
+
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('ออเดอร์เสร็จสิ้นแล้ว ✅'),
+                          ),
+                        );
+                        Get.to(() => RiderHomePage());
+                      }
+                    } catch (e) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('เกิดข้อผิดพลาด: $e')),
+                      );
+                    }
+                  },
+                ),
+              ),
+            ),
         ],
       ),
     );
@@ -383,12 +445,102 @@ class _RiderDeliveryStatusPageState extends State<RiderDeliveryStatusPage> {
         );
         return;
       }
+
+      final auth = context.read<AuthProvider>();
+      final rider = auth.currentRider;
+      if (rider == null) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('ไม่พบข้อมูลไรเดอร์')));
+        return;
+      }
+
+      final orderRef = FirebaseFirestore.instance
+          .collection('orders')
+          .doc(widget.orderId);
+
+      try {
+        // 1) อ่านสถานะล่าสุดเพื่อกันเคสซิงก์
+        final snap = await orderRef.get();
+        final int cur = (snap.data()?['current_status'] ?? 2) as int;
+        final int nextStatus = _nextPhotoStatus(cur);
+
+        // 2) อัปโหลดภาพ แล้วบันทึกลง delivery_photos ด้วยสถานะเดียวกัน (3 หรือ 4)
+        await _uploadDeliveryPhotoFromLocalFile(
+          filePath: picked!.path,
+          orderId: widget.orderId, // ไม่ต้อง parse เป็น int
+          uploaderUid: rider.id,
+          status: nextStatus,
+        );
+
+        // 3) อัปเดตสถานะออเดอร์เป็น nextStatus (ไม่ใช่ +1 แบบเดิม)
+        await orderRef.update({
+          'current_status': nextStatus,
+          'updated_at': FieldValue.serverTimestamp(),
+        });
+
+        // 4) รีเฟรชไฮไลท์ทันที
+        if (mounted) {
+          setState(() => currentStatus = nextStatus);
+        }
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('อัปโหลดสำเร็จ (สถานะ = $nextStatus)')),
+        );
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('เกิดข้อผิดพลาดในการอัปโหลด: $e')),
+        );
+      }
     }
+  }
+
+  Future<String> _uploadDeliveryPhotoFromLocalFile({
+    required String filePath,
+    required String orderId, // เดิมเป็น int
+    required String uploaderUid,
+    required int status,
+  }) async {
+    final fileBytes = await File(filePath).readAsBytes();
+
+    final fileName = '${DateTime.now().millisecondsSinceEpoch}.jpg';
+    final objectPath = 'delivery_photos/$orderId/$fileName';
+
+    await supa.storage
+        .from('delivery')
+        .uploadBinary(
+          objectPath,
+          fileBytes,
+          fileOptions: const FileOptions(
+            contentType: 'image/jpeg',
+            upsert: true,
+          ),
+        );
+
+    final publicUrl = supa.storage.from('delivery').getPublicUrl(objectPath);
+
+    await FirebaseFirestore.instance.collection('delivery_photos').add({
+      'image_url': publicUrl,
+      'order_id': orderId, // String ได้เลย
+      'status': status,
+      'upload_by': uploaderUid,
+      'created_at': FieldValue.serverTimestamp(),
+    });
+
+    return publicUrl;
   }
 
   Future<void> _loadPositions() async {
     try {
       final auth = context.read<AuthProvider>();
+      final riderData = auth.currentRider;
+      if (riderData == null) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('ไม่พบข้อมูลไรเดอร์')));
+        return;
+      }
+
       LatLng? rider;
 
       if (auth.riderLat != null && auth.riderLng != null) {
@@ -408,6 +560,7 @@ class _RiderDeliveryStatusPageState extends State<RiderDeliveryStatusPage> {
       final data = orderDoc.data()!;
       final sendAtPath = _pathFrom(data['send_at']);
       final receiveAtPath = _pathFrom(data['receive_at']);
+      final int status = (data['current_status'] ?? 0) as int;
 
       LatLng? s, r;
       if (sendAtPath != null && sendAtPath.isNotEmpty) {
@@ -423,6 +576,7 @@ class _RiderDeliveryStatusPageState extends State<RiderDeliveryStatusPage> {
         senderPos = s;
         receiverPos = r;
         loading = false;
+        currentStatus = status;
       });
     } catch (e) {
       if (!mounted) return;
@@ -431,6 +585,16 @@ class _RiderDeliveryStatusPageState extends State<RiderDeliveryStatusPage> {
         context,
       ).showSnackBar(SnackBar(content: Text('โหลดตำแหน่งไม่สำเร็จ: $e')));
     }
+  }
+
+  int _nextPhotoStatus(int current) {
+    // [1]รอรับ → อัพรูปครั้งแรก = 3, ครั้งถัดไป = 4
+    // [2]กำลังไปรับ → อัพรูปครั้งแรก = 3, ครั้งถัดไป = 4
+    // [3]รับแล้ว → อัพรูปครั้งถัดไป = 4
+    // [4]ส่งแล้ว → คง 4
+    if (current < 3) return 3;
+    if (current == 3) return 4;
+    return 4;
   }
 }
 
