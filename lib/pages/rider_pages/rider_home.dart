@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:mobile_delivery/pages/rider_pages/rider_delivery_status_page.dart';
 import 'package:mobile_delivery/pages/rider_pages/rider_profile_page.dart';
 import 'package:provider/provider.dart';
 import 'package:mobile_delivery/models/product_data.dart';
@@ -156,9 +157,8 @@ class _RiderHomePageState extends State<RiderHomePage> {
                     separatorBuilder: (_, __) => const SizedBox(height: 8),
                     itemBuilder: (_, i) => _ProductCardFromModel(
                       product: filtered[i],
-                      riderId: rider.id, // << ส่ง riderId ลงไป
-                      onAccept: (p) =>
-                          _acceptOrder(p, rider.id), // << callback กดรับงาน
+                      onTap: () =>
+                          _acceptOrder(filtered[i], rider.id), // <-- เพิ่ม
                     ),
                   );
                 },
@@ -273,9 +273,11 @@ class _RiderHomePageState extends State<RiderHomePage> {
       });
 
       if (!mounted) return;
-      ScaffoldMessenger.of(
+
+      Navigator.pushReplacement(
         context,
-      ).showSnackBar(SnackBar(content: Text('รับงานสำเร็จ: ${product.name}')));
+        MaterialPageRoute(builder: (_) => RiderDeliveryStatusPage()),
+      );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(
@@ -287,24 +289,16 @@ class _RiderHomePageState extends State<RiderHomePage> {
 
 class _ProductCardFromModel extends StatelessWidget {
   final Product product;
-  final String riderId;
-  final Future<void> Function(Product) onAccept;
+  final VoidCallback? onTap;
 
-  const _ProductCardFromModel({
-    required this.product,
-    required this.riderId,
-    required this.onAccept,
-  });
+  const _ProductCardFromModel({required this.product, this.onTap});
 
   @override
   Widget build(BuildContext context) {
     const borderCol = Color(0x55000000);
 
     return InkWell(
-      onTap: () async {
-        // กดทั้งใบ = รับงาน
-        await onAccept(product);
-      },
+      onTap: onTap,
       borderRadius: BorderRadius.circular(12),
       child: Container(
         decoration: BoxDecoration(
@@ -340,7 +334,6 @@ class _ProductCardFromModel extends StatelessWidget {
                 ),
               ),
             ),
-            // ไอคอนสื่อว่า "กดเพื่อรับงาน"
             const Icon(Icons.check_circle_outline),
           ],
         ),

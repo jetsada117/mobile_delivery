@@ -4,8 +4,6 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:latlong2/latlong.dart';
 
-import 'rider_pickup_page.dart';
-
 class RiderDeliveryStatusPage extends StatefulWidget {
   const RiderDeliveryStatusPage({super.key});
 
@@ -26,6 +24,7 @@ class _RiderDeliveryStatusPageState extends State<RiderDeliveryStatusPage> {
     return Scaffold(
       backgroundColor: bg,
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         backgroundColor: Colors.transparent,
         elevation: 0,
         title: const Text(
@@ -33,14 +32,35 @@ class _RiderDeliveryStatusPageState extends State<RiderDeliveryStatusPage> {
           style: TextStyle(fontWeight: FontWeight.w800),
         ),
       ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(12, 8, 12, 16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+      body: Stack(
+        children: [
+          FlutterMap(
+            options: MapOptions(
+              initialCenter: const LatLng(16.2458, 103.2500),
+              initialZoom: 15.0,
+            ),
             children: [
-              // แถวไอคอนสถานะ
-              Container(
+              TileLayer(
+                urlTemplate:
+                    'https://tile.thunderforest.com/atlas/{z}/{x}/{y}.png?apikey=6949d257c8de4157a028c7a44b05af3d',
+                userAgentPackageName: 'com.example.mobile_delivery',
+              ),
+              const MarkerLayer(
+                markers: [
+                  Marker(
+                    point: LatLng(16.2458, 103.2500),
+                    width: 36,
+                    height: 36,
+                    child: Icon(Icons.location_on, color: Colors.black87),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+              child: Container(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 12,
                   vertical: 8,
@@ -50,116 +70,80 @@ class _RiderDeliveryStatusPageState extends State<RiderDeliveryStatusPage> {
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: borderCol),
                 ),
-                child: Row(
+                child: const Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: const [
-                    _StatusPill(icon: Icons.location_on_outlined, iconColor: Colors.green),
+                  children: [
+                    _StatusPill(
+                      icon: Icons.location_on_outlined,
+                      iconColor: Colors.green,
+                    ),
                     _StatusPill(icon: Icons.check_circle_outline),
                     _StatusPill(icon: Icons.local_shipping_outlined),
-                    _StatusPill(icon: Icons.home_outlined),
                   ],
                 ),
               ),
-              const SizedBox(height: 10),
-
-              // แผนที่
-              SizedBox(
-                height: 270,
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: FlutterMap(
-                    options: MapOptions(
-                      initialCenter: const LatLng(16.2458, 103.2500),
-                      initialZoom: 15.0,
-                    ),
-                    children: [
-                      TileLayer(
-                        urlTemplate:
-                            'https://tile.thunderforest.com/atlas/{z}/{x}/{y}.png?apikey=6949d257c8de4157a028c7a44b05af3d',
-                        userAgentPackageName: 'com.example.mobile_delivery',
-                      ),
-                      const MarkerLayer(
-                        markers: [
-                          Marker(
-                            point: LatLng(16.2458, 103.2500),
-                            width: 36,
-                            height: 36,
-                            child: Icon(
-                              Icons.location_on,
-                              color: Colors.black87,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 14),
-
-              // ปุ่มถ่าย/อัปโหลดรูป
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: [
-                  Column(
-                    children: [
-                      const Text('รับออเดอร์'),
-                      const SizedBox(height: 6),
-                      _CameraButton(
-                        onTap: () => _openProofPopup(context, 'รับออเดอร์'),
-                      ),
-                    ],
-                  ),
-                  Column(
-                    children: [
-                      const Text('จัดส่งสำเร็จ'),
-                      const SizedBox(height: 6),
-                      _CameraButton(
-                        onTap: () => _openProofPopup(context, 'จัดส่งสำเร็จ'),
-                      ),
-                    ],
+            ),
+          ),
+          Positioned(
+            left: 24,
+            bottom: 140,
+            child: _CameraButton(
+              onTap: () => _openProofPopup(context, 'รับออเดอร์'),
+            ),
+          ),
+          Positioned(
+            right: 24,
+            bottom: 140,
+            child: _CameraButton(
+              onTap: () => _openProofPopup(context, 'จัดส่งสำเร็จ'),
+            ),
+          ),
+          Positioned(
+            left: 12,
+            right: 12,
+            bottom: 20,
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: borderCol),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Color(0x22000000),
+                    blurRadius: 8,
+                    offset: Offset(0, 3),
                   ),
                 ],
               ),
-              const SizedBox(height: 14),
-
-              // การ์ดข้อมูลผู้รับ
-              Container(
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: borderCol),
-                ),
-                padding: const EdgeInsets.all(12),
-                child: Row(
-                  children: const [
-                    CircleAvatar(
-                      radius: 24,
-                      backgroundImage: NetworkImage(
-                        'https://i.pravatar.cc/100?img=12',
-                      ),
+              padding: const EdgeInsets.all(12),
+              child: Row(
+                children: const [
+                  CircleAvatar(
+                    radius: 24,
+                    backgroundImage: NetworkImage(
+                      'https://i.pravatar.cc/100?img=12',
                     ),
-                    SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'ข้อมูลผู้รับ',
-                            style: TextStyle(fontWeight: FontWeight.w700),
-                          ),
-                          SizedBox(height: 4),
-                          Text('ชื่อ: นายสมชาย เด็กดี'),
-                          Text('เบอร์โทร: 012-345-6789'),
-                        ],
-                      ),
+                  ),
+                  SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'ข้อมูลผู้รับ',
+                          style: TextStyle(fontWeight: FontWeight.w700),
+                        ),
+                        SizedBox(height: 4),
+                        Text('ชื่อ: นายสมชาย เด็กดี'),
+                        Text('เบอร์โทร: 012-345-6789'),
+                      ],
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
@@ -193,7 +177,6 @@ class _RiderDeliveryStatusPageState extends State<RiderDeliveryStatusPage> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // แตะกล้องเพื่อ "ถ่ายรูป"
                   GestureDetector(
                     onTap: () async {
                       final x = await _picker.pickImage(
@@ -224,8 +207,6 @@ class _RiderDeliveryStatusPageState extends State<RiderDeliveryStatusPage> {
                     ),
                   ),
                   const SizedBox(height: 12),
-
-                  // ชื่อรูป + ปุ่มอัปโหลด
                   Row(
                     children: [
                       Expanded(
@@ -270,8 +251,6 @@ class _RiderDeliveryStatusPageState extends State<RiderDeliveryStatusPage> {
                     ],
                   ),
                   const SizedBox(height: 16),
-
-                  // ยกเลิก / ยืนยัน
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
@@ -303,7 +282,6 @@ class _RiderDeliveryStatusPageState extends State<RiderDeliveryStatusPage> {
       ),
     );
 
-    // ถ้ากดยืนยันแล้วมีรูป -> ไปหน้าไรเดอร์รับพัสดุ พร้อมแสดงรูป
     if (ok == true && context.mounted) {
       if (picked == null) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -311,24 +289,14 @@ class _RiderDeliveryStatusPageState extends State<RiderDeliveryStatusPage> {
         );
         return;
       }
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => RiderPickupPage(imageFile: File(picked!.path)),
-        ),
-      );
     }
   }
 }
 
-/* ---------- Widgets ภายในไฟล์ ---------- */
 class _StatusPill extends StatelessWidget {
-  const _StatusPill({
-    required this.icon,
-    this.iconColor = Colors.black87, // << เพิ่ม
-  });
+  const _StatusPill({required this.icon, this.iconColor = Colors.black87});
   final IconData icon;
-  final Color iconColor; // << เพิ่ม
+  final Color iconColor;
 
   @override
   Widget build(BuildContext context) {
@@ -340,7 +308,7 @@ class _StatusPill extends StatelessWidget {
         borderRadius: BorderRadius.circular(10),
         border: Border.all(color: const Color(0x55000000)),
       ),
-      child: Icon(icon, size: 20, color: iconColor), // << ใช้สี
+      child: Icon(icon, size: 20, color: iconColor),
     );
   }
 }
