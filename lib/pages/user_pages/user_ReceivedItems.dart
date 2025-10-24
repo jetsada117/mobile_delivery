@@ -3,10 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:mobile_delivery/models/send_item_view.dart';
-import 'package:mobile_delivery/pages/user_pages/user_combined_map.dart';
 import 'package:mobile_delivery/pages/user_pages/user_home.dart';
 import 'package:mobile_delivery/pages/user_pages/user_profile.dart';
 import 'package:mobile_delivery/pages/user_pages/user_rider_map.dart';
+import 'package:mobile_delivery/pages/user_pages/user_rider_map_receive.dart';
 import 'package:mobile_delivery/pages/user_pages/user_sentItems.dart';
 import 'package:mobile_delivery/pages/user_pages/user_statuschat.dart';
 import 'package:mobile_delivery/providers/auth_provider.dart';
@@ -136,23 +136,141 @@ class _ReceivedItemsPageState extends State<ReceivedItemsPage> {
         child: SizedBox(
           height: 36,
           child: ElevatedButton.icon(
-            onPressed: () {
-              final points = <LatLng>[
-                const LatLng(16.2448, 103.2520),
-                const LatLng(16.2380, 103.2425),
-                const LatLng(16.2325, 103.2580),
-              ];
-              Get.to(
-                () => CombinedMapPage(
-                  points: points,
-                  riderName: 'นายสมชาย เดลิเวอรี่',
-                  statusText: '[3]',
-                  phone: '012-345-6789',
-                  plate: '8กพ 877',
-                  avatarUrl: 'https://i.pravatar.cc/100?img=15',
-                ),
-              );
+            onPressed: () async {
+              final uid = context.read<AuthProvider>().currentUser?.uid;
+              if (uid == null || uid.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('กรุณาเข้าสู่ระบบก่อน')),
+                );
+                return;
+              }
+
+              final db = FirebaseFirestore.instance;
+
+              try {
+                // ดึงเฉพาะออเดอร์ที่ “เราคือผู้รับ”
+                final q = await db
+                    .collection('orders')
+                    .where('receive_id', isEqualTo: uid)
+                    .get();
+
+                if (q.docs.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('ยังไม่มีออเดอร์ที่ส่งมาหาคุณ'),
+                    ),
+                  );
+                  return;
+                }
+
+                final senders = <SenderPin>[];
+                final riders = <RiderPin>[];
+
+                // กันรายการซ้ำ
+                final seenSenders = <String>{}; // ใช้ send_id
+                final seenRiders = <String>{}; // ใช้ rider_id
+
+                for (final d in q.docs) {
+                  final data = d.data();
+
+                  final String group = (data['order_id']?.toString() ?? d.id)
+                      .toString();
+                  final String? sendId = (data['send_id'] as String?)?.trim();
+                  final String? sendAt = _extractDocPath(data['send_at']);
+                  final String? riderId = (data['rider_id'] as String?)?.trim();
+
+                  // -------- ผู้ส่ง (ร้าน/ผู้ฝากส่ง) --------
+                  if (sendId != null &&
+                      sendId.isNotEmpty &&
+                      !seenSenders.contains(sendId)) {
+                    final pos = await _latLngFromPath(sendAt);
+                    if (pos != null) {
+                      String senderName = 'ผู้ส่ง';
+                      String? note;
+
+                      try {
+                        // ชื่อ/รูป/เบอร์อยู่ใน users/{sendId}
+                        final userDoc = await db
+                            .collection('users')
+                            .doc(sendId)
+                            .get();
+                        if (userDoc.exists) {
+                          final m = userDoc.data() as Map<String, dynamic>;
+                          senderName = (m['name'] as String?) ?? senderName;
+                          // ถ้าอยากโชว์เบอร์ใน panel เป็น note ก็เก็บไว้ได้
+                          note = m['phone'] as String?;
+                        }
+                      } catch (_) {}
+
+                      senders.add(
+                        SenderPin(
+                          group: group,
+                          name: senderName,
+                          pos: pos,
+                          note: note,
+                        ),
+                      );
+                      seenSenders.add(sendId);
+                    }
+                  }
+
+                  // -------- ไรเดอร์ (ถ้ามีในออเดอร์) --------
+                  if (riderId != null &&
+                      riderId.isNotEmpty &&
+                      !seenRiders.contains(riderId)) {
+                    try {
+                      final r = await db
+                          .collection('riders')
+                          .doc(riderId)
+                          .get();
+                      if (r.exists) {
+                        final m = r.data() as Map<String, dynamic>;
+                        final lat = (m['lat'] as num?)?.toDouble();
+                        final lng = (m['lng'] as num?)?.toDouble();
+
+                        if (lat != null && lng != null) {
+                          riders.add(
+                            RiderPin(
+                              group: group,
+                              riderId: riderId,
+                              name: (m['name'] as String?) ?? 'ไรเดอร์',
+                              pos: LatLng(lat, lng),
+                              phone: m['phone'] as String?,
+                              plate: m['plate_no'] as String?,
+                              avatarUrl: m['rider_image'] as String?,
+                            ),
+                          );
+                          seenRiders.add(riderId);
+                        }
+                      }
+                    } catch (_) {}
+                  }
+                }
+
+                if (senders.isEmpty && riders.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('ไม่มีจุดผู้ส่ง/ไรเดอร์ให้แสดงบนแผนที่'),
+                    ),
+                  );
+                  return;
+                }
+
+                // เปิดหน้าแผนที่รวม "ผู้ส่ง + ไรเดอร์"
+                Get.to(
+                  () => CombinedSendersLiveMapPage(
+                    title: 'แผนที่รวมผู้ส่ง',
+                    senders: senders,
+                    riders: riders,
+                  ),
+                );
+              } catch (e) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('ดึงข้อมูลไม่สำเร็จ: $e')),
+                );
+              }
             },
+
             icon: const Icon(Icons.map_outlined, size: 16),
             label: const Text('แผนที่รวม', style: TextStyle(fontSize: 12)),
             style: ElevatedButton.styleFrom(
@@ -229,6 +347,13 @@ class _ReceivedItemsPageState extends State<ReceivedItemsPage> {
     } catch (_) {
       return null;
     }
+  }
+
+  String? _extractDocPath(dynamic value) {
+    if (value == null) return null;
+    if (value is String) return value;
+    if (value is DocumentReference) return value.path;
+    return null;
   }
 }
 

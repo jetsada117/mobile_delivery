@@ -386,7 +386,7 @@ class _RiderAcceptOrderPageState extends State<RiderAcceptOrderPage> {
       if (m < minMeters) minMeters = m;
     }
 
-    if (minMeters > 2000) {
+    if (minMeters > 20) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(

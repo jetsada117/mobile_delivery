@@ -423,7 +423,7 @@ class _RiderDeliveryStatusPageState extends State<RiderDeliveryStatusPage> {
         // 2) อัปโหลดภาพ แล้วบันทึกลง delivery_photos ด้วยสถานะเดียวกัน (3 หรือ 4)
         await _uploadDeliveryPhotoFromLocalFile(
           filePath: picked!.path,
-          orderId: widget.orderId, // ไม่ต้อง parse เป็น int
+          orderId: int.parse(widget.orderId),
           uploaderUid: rider.id,
           status: nextStatus,
         );
@@ -452,7 +452,7 @@ class _RiderDeliveryStatusPageState extends State<RiderDeliveryStatusPage> {
 
   Future<String> _uploadDeliveryPhotoFromLocalFile({
     required String filePath,
-    required String orderId, // เดิมเป็น int
+    required int orderId,
     required String uploaderUid,
     required int status,
   }) async {
@@ -476,7 +476,7 @@ class _RiderDeliveryStatusPageState extends State<RiderDeliveryStatusPage> {
 
     await FirebaseFirestore.instance.collection('delivery_photos').add({
       'image_url': publicUrl,
-      'order_id': orderId, // String ได้เลย
+      'order_id': orderId,
       'status': status,
       'upload_by': uploaderUid,
       'created_at': FieldValue.serverTimestamp(),

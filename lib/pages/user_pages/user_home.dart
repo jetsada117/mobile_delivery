@@ -31,7 +31,6 @@ class _UserHomePageState extends State<UserHomePage> {
   Widget build(BuildContext context) {
     const bg = Color(0xFFD2C2F1);
     const cardBg = Color(0xFFF4EBFF);
-    const borderCol = Color(0x55000000);
 
     final auth = context.watch<AuthProvider>();
     final user = auth.currentUser;
@@ -75,26 +74,6 @@ class _UserHomePageState extends State<UserHomePage> {
                 ],
               ),
               const SizedBox(height: 12),
-
-              TextField(
-                controller: _search,
-                decoration: InputDecoration(
-                  hintText: 'ค้นหา......',
-                  prefixIcon: const Icon(Icons.search),
-                  filled: true,
-                  fillColor: Colors.white,
-                  isDense: true,
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 12,
-                  ),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                    borderSide: const BorderSide(color: borderCol),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
 
               const Text(
                 'รายการสินค้าของคุณ :',

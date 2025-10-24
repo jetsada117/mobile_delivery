@@ -7,7 +7,7 @@ import 'package:mobile_delivery/pages/user_pages/user_receiveditems.dart';
 import 'package:mobile_delivery/pages/user_pages/user_home.dart';
 import 'package:mobile_delivery/pages/user_pages/user_profile.dart';
 import 'package:mobile_delivery/pages/user_pages/user_rider_map.dart';
-import 'package:mobile_delivery/pages/user_pages/user_rider_map_all.dart';
+import 'package:mobile_delivery/pages/user_pages/user_rider_map_sent.dart';
 import 'package:mobile_delivery/pages/user_pages/user_statuschat.dart';
 import 'package:mobile_delivery/providers/auth_provider.dart';
 import 'package:mobile_delivery/repositories/send_item_view.dart';
