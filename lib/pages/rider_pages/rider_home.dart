@@ -157,8 +157,7 @@ class _RiderHomePageState extends State<RiderHomePage> {
                     separatorBuilder: (_, __) => const SizedBox(height: 8),
                     itemBuilder: (_, i) => _ProductCardFromModel(
                       product: filtered[i],
-                      onTap: () =>
-                          _acceptOrder(filtered[i], rider.id), // <-- เพิ่ม
+                      onTap: () => _acceptOrder(filtered[i], rider.id),
                     ),
                   );
                 },
@@ -276,7 +275,9 @@ class _RiderHomePageState extends State<RiderHomePage> {
 
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (_) => RiderDeliveryStatusPage()),
+        MaterialPageRoute(
+          builder: (_) => RiderDeliveryStatusPage(orderId: docId),
+        ),
       );
     } catch (e) {
       if (!mounted) return;
