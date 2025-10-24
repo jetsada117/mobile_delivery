@@ -266,8 +266,8 @@ class _RiderHomePageState extends State<RiderHomePage> {
       final docId = product.orderId.toString();
       await FirebaseFirestore.instance.collection('orders').doc(docId).update({
         'rider_id': riderId,
-        'current_status': 2,
-        'is_active': true,
+        'current_status': 1,
+        'is_active': false,
         'updated_at': FieldValue.serverTimestamp(),
       });
 
