@@ -6,7 +6,6 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:mobile_delivery/models/rider_data.dart';
 import 'package:mobile_delivery/providers/auth_provider.dart';
 import 'package:provider/provider.dart';
 
@@ -24,7 +23,6 @@ class _RiderDeliveryStatusPageState extends State<RiderDeliveryStatusPage> {
   static const cardBg = Color(0xFFF4EBFF);
   static const borderCol = Color(0x55000000);
   final MapController _mapController = MapController();
-  StreamSubscription<Position>? _posSub;
 
   final _picker = ImagePicker();
 
@@ -37,12 +35,10 @@ class _RiderDeliveryStatusPageState extends State<RiderDeliveryStatusPage> {
   void initState() {
     super.initState();
     _loadPositions();
-    _startPositionStream();
   }
 
   @override
   void dispose() {
-    _posSub?.cancel();
     super.dispose();
   }
 
@@ -63,57 +59,14 @@ class _RiderDeliveryStatusPageState extends State<RiderDeliveryStatusPage> {
     return LatLng(lat, lng);
   }
 
-  Future<void> _loadPositions() async {
-    try {
-      final perm = await Geolocator.requestPermission();
-      if (perm == LocationPermission.deniedForever) {
-        throw 'ไม่ได้รับสิทธิ์ตำแหน่ง (deniedForever)';
-      }
-      if (perm == LocationPermission.denied) {
-        final again = await Geolocator.requestPermission();
-        if (again == LocationPermission.denied) {
-          throw 'ไม่ได้รับสิทธิ์ตำแหน่ง';
-        }
-      }
-      final p = await Geolocator.getCurrentPosition();
-      final rider = LatLng(p.latitude, p.longitude);
-
-      final orderDoc = await FirebaseFirestore.instance
-          .collection('orders')
-          .doc(widget.orderId)
-          .get();
-      if (!orderDoc.exists) throw 'ไม่พบออเดอร์ ${widget.orderId}';
-
-      final data = orderDoc.data()!;
-      final sendAtPath = _pathFrom(data['send_at']);
-      final receiveAtPath = _pathFrom(data['receive_at']);
-
-      LatLng? s, r;
-      if (sendAtPath != null && sendAtPath.isNotEmpty) {
-        s = await _latLngFromPath(sendAtPath);
-      }
-      if (receiveAtPath != null && receiveAtPath.isNotEmpty) {
-        r = await _latLngFromPath(receiveAtPath);
-      }
-
-      if (!mounted) return;
-      setState(() {
-        riderPos = rider;
-        senderPos = s;
-        receiverPos = r;
-        loading = false;
-      });
-    } catch (e) {
-      if (!mounted) return;
-      setState(() => loading = false);
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('โหลดตำแหน่งไม่สำเร็จ: $e')));
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
+    final auth = context
+        .watch<AuthProvider>(); // 👈 ใช้ watch เพื่อ reactive update
+    final providerRiderPos = (auth.riderLat != null && auth.riderLng != null)
+        ? LatLng(auth.riderLat!, auth.riderLng!)
+        : null;
+
     if (loading) {
       return const Scaffold(
         backgroundColor: bg,
@@ -121,14 +74,16 @@ class _RiderDeliveryStatusPageState extends State<RiderDeliveryStatusPage> {
       );
     }
 
-    // ศูนย์กลางเริ่มต้น: ไรเดอร์ > ผู้ส่ง > ผู้รับ > fallback
     final initialCenter =
-        riderPos ?? senderPos ?? receiverPos ?? const LatLng(16.2458, 103.25);
+        providerRiderPos ??
+        senderPos ??
+        receiverPos ??
+        const LatLng(16.2458, 103.25);
 
     return Scaffold(
       backgroundColor: bg,
       appBar: AppBar(
-        automaticallyImplyLeading: false, // ปิดปุ่มย้อนกลับ
+        automaticallyImplyLeading: false,
         backgroundColor: Colors.transparent,
         elevation: 0,
         title: const Text(
@@ -139,7 +94,7 @@ class _RiderDeliveryStatusPageState extends State<RiderDeliveryStatusPage> {
       body: Stack(
         children: [
           FlutterMap(
-            mapController: _mapController, // << เพิ่ม
+            mapController: _mapController,
             options: MapOptions(
               initialCenter: initialCenter,
               initialZoom: 14.5,
@@ -150,11 +105,9 @@ class _RiderDeliveryStatusPageState extends State<RiderDeliveryStatusPage> {
                     'https://tile.thunderforest.com/atlas/{z}/{x}/{y}.png?apikey=6949d257c8de4157a028c7a44b05af3d',
                 userAgentPackageName: 'com.example.mobile_delivery',
               ),
-              MarkerLayer(markers: _buildMarkers()),
+              MarkerLayer(markers: _buildMarkers(providerRiderPos)),
             ],
           ),
-
-          // แถบไอคอนสถานะ
           SafeArea(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
@@ -182,8 +135,6 @@ class _RiderDeliveryStatusPageState extends State<RiderDeliveryStatusPage> {
               ),
             ),
           ),
-
-          // ปุ่มถ่ายรูป (รับออเดอร์ / ส่งสำเร็จ)
           Positioned(
             left: 24,
             bottom: 140,
@@ -198,8 +149,6 @@ class _RiderDeliveryStatusPageState extends State<RiderDeliveryStatusPage> {
               onTap: () => _openProofPopup(context, 'จัดส่งสำเร็จ'),
             ),
           ),
-
-          // การ์ดข้อมูลผู้รับ (ตัวอย่าง UI)
           Positioned(
             left: 12,
             right: 12,
@@ -250,10 +199,11 @@ class _RiderDeliveryStatusPageState extends State<RiderDeliveryStatusPage> {
     );
   }
 
-  List<Marker> _buildMarkers() {
-    final m = <Marker>[];
+  List<Marker> _buildMarkers(LatLng? riderLivePos) {
+    final markers = <Marker>[];
+
     if (senderPos != null) {
-      m.add(
+      markers.add(
         Marker(
           point: senderPos!,
           width: 36,
@@ -262,8 +212,9 @@ class _RiderDeliveryStatusPageState extends State<RiderDeliveryStatusPage> {
         ),
       );
     }
+
     if (receiverPos != null) {
-      m.add(
+      markers.add(
         Marker(
           point: receiverPos!,
           width: 36,
@@ -272,17 +223,23 @@ class _RiderDeliveryStatusPageState extends State<RiderDeliveryStatusPage> {
         ),
       );
     }
-    if (riderPos != null) {
-      m.add(
+
+    if (riderLivePos != null) {
+      markers.add(
         Marker(
-          point: riderPos!,
+          point: riderLivePos,
           width: 40,
           height: 40,
-          child: const Icon(Icons.delivery_dining, size: 36),
+          child: const Icon(
+            Icons.delivery_dining,
+            size: 36,
+            color: Colors.black87,
+          ),
         ),
       );
     }
-    return m;
+
+    return markers;
   }
 
   Future<void> _openProofPopup(BuildContext context, String title) async {
@@ -429,53 +386,50 @@ class _RiderDeliveryStatusPageState extends State<RiderDeliveryStatusPage> {
     }
   }
 
-  Future<void> _startPositionStream() async {
-    LocationPermission perm = await Geolocator.checkPermission();
-    if (perm == LocationPermission.denied) {
-      perm = await Geolocator.requestPermission();
-    }
-    if (perm == LocationPermission.deniedForever) return;
-
-    const settings = LocationSettings(
-      accuracy: LocationAccuracy.best,
-      distanceFilter: 1,
-    );
-
-    _posSub?.cancel();
-    _posSub = Geolocator.getPositionStream(locationSettings: settings).listen((
-      pos,
-    ) {
-      final newPos = LatLng(pos.latitude, pos.longitude);
-
-      if (!mounted) return;
-
-      setState(() => riderPos = newPos);
-
-      _updateRiderLocationToFirestore(newPos);
-    });
-  }
-
-  Future<void> _updateRiderLocationToFirestore(LatLng pos) async {
+  Future<void> _loadPositions() async {
     try {
       final auth = context.read<AuthProvider>();
-      final RiderData? rider = auth.currentRider;
-      if (rider == null) {
-        debugPrint('⚠️ ไม่มีข้อมูลไรเดอร์ใน provider');
-        return;
+      LatLng? rider;
+
+      if (auth.riderLat != null && auth.riderLng != null) {
+        rider = LatLng(auth.riderLat!, auth.riderLng!);
+      } else {
+        final p = await Geolocator.getCurrentPosition();
+        rider = LatLng(p.latitude, p.longitude);
       }
 
-      await FirebaseFirestore.instance
-          .collection('riders')
-          .doc(rider.id)
-          .update({
-            'lat': pos.latitude,
-            'lng': pos.longitude,
-            'updated_at': FieldValue.serverTimestamp(),
-          });
+      final orderDoc = await FirebaseFirestore.instance
+          .collection('orders')
+          .doc(widget.orderId)
+          .get();
 
-      debugPrint('✅ อัปเดตตำแหน่งไรเดอร์เรียบร้อย (riders/${rider.id})');
+      if (!orderDoc.exists) throw 'ไม่พบออเดอร์ ${widget.orderId}';
+
+      final data = orderDoc.data()!;
+      final sendAtPath = _pathFrom(data['send_at']);
+      final receiveAtPath = _pathFrom(data['receive_at']);
+
+      LatLng? s, r;
+      if (sendAtPath != null && sendAtPath.isNotEmpty) {
+        s = await _latLngFromPath(sendAtPath);
+      }
+      if (receiveAtPath != null && receiveAtPath.isNotEmpty) {
+        r = await _latLngFromPath(receiveAtPath);
+      }
+
+      if (!mounted) return;
+      setState(() {
+        riderPos = rider;
+        senderPos = s;
+        receiverPos = r;
+        loading = false;
+      });
     } catch (e) {
-      debugPrint('❌ อัปเดตตำแหน่งไม่สำเร็จ: $e');
+      if (!mounted) return;
+      setState(() => loading = false);
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('โหลดตำแหน่งไม่สำเร็จ: $e')));
     }
   }
 }
@@ -493,7 +447,7 @@ class _StatusPill extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: const Color(0x55000000)),
+        border: Border.all(color: Color(0x55000000)),
       ),
       child: Icon(icon, size: 20, color: iconColor),
     );
@@ -512,7 +466,7 @@ class _CameraButton extends StatelessWidget {
       child: ElevatedButton(
         onPressed: onTap,
         style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFFC9A9F5),
+          backgroundColor: Color(0xFFC9A9F5),
           foregroundColor: Colors.black87,
           elevation: 0,
           shape: RoundedRectangleBorder(

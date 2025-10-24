@@ -1,18 +1,21 @@
 import 'dart:async';
-
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:mobile_delivery/models/user_data.dart';
 import 'package:mobile_delivery/models/rider_data.dart';
+import 'package:mobile_delivery/models/user_data.dart';
 
 class AuthProvider extends ChangeNotifier {
   UserData? _currentUser;
   RiderData? _currentRider;
 
+  double? _riderLat, _riderLng;
+  double? get riderLat => _riderLat;
+  double? get riderLng => _riderLng;
+
   UserData? get currentUser => _currentUser;
   RiderData? get currentRider => _currentRider;
-  Stream<Position>? _posStream;
+
   StreamSubscription<Position>? _posSub;
 
   bool get isUserLoggedIn => _currentUser != null;
@@ -22,6 +25,7 @@ class AuthProvider extends ChangeNotifier {
   void setUser(UserData user) {
     _currentUser = user;
     _currentRider = null;
+    stopRiderLocationTracking();
     notifyListeners();
   }
 
@@ -29,16 +33,19 @@ class AuthProvider extends ChangeNotifier {
     _currentRider = rider;
     _currentUser = null;
     notifyListeners();
+    startRiderLocationTracking();
   }
 
   void clear() {
     _currentUser = null;
     _currentRider = null;
+    stopRiderLocationTracking();
     notifyListeners();
   }
 
   void startRiderLocationTracking() async {
-    if (currentRider == null) return;
+    if (_currentRider == null) return;
+    if (_posSub != null) return;
 
     LocationPermission perm = await Geolocator.checkPermission();
     if (perm == LocationPermission.denied) {
@@ -54,28 +61,48 @@ class AuthProvider extends ChangeNotifier {
       distanceFilter: 1,
     );
 
-    _posSub?.cancel();
-    _posStream = Geolocator.getPositionStream(locationSettings: settings);
-    _posSub = _posStream!.listen((pos) async {
+    _posSub = Geolocator.getPositionStream(locationSettings: settings).listen((
+      pos,
+    ) async {
+      _riderLat = pos.latitude;
+      _riderLng = pos.longitude;
+      notifyListeners();
+
       try {
         await FirebaseFirestore.instance
             .collection('riders')
-            .doc(currentRider!.id)
+            .doc(_currentRider!.id)
             .update({
               'lat': pos.latitude,
               'lng': pos.longitude,
               'updated_at': FieldValue.serverTimestamp(),
             });
-        debugPrint('✅ อัปเดตตำแหน่งไรเดอร์: ${pos.latitude}, ${pos.longitude}');
       } catch (e) {
         debugPrint('⚠️ อัปเดตตำแหน่งล้มเหลว: $e');
       }
     });
   }
 
+  Future<void> updateRiderLocation({
+    required double lat,
+    required double lng,
+  }) async {
+    if (_currentRider == null) return;
+    _riderLat = lat;
+    _riderLng = lng;
+    notifyListeners();
+    await FirebaseFirestore.instance
+        .collection('riders')
+        .doc(_currentRider!.id)
+        .update({
+          'lat': lat,
+          'lng': lng,
+          'updated_at': FieldValue.serverTimestamp(),
+        });
+  }
+
   void stopRiderLocationTracking() {
     _posSub?.cancel();
     _posSub = null;
-    debugPrint('🛑 หยุดติดตามตำแหน่งไรเดอร์');
   }
 }
