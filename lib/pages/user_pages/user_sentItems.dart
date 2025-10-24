@@ -106,24 +106,13 @@ class _SentItemsPageState extends State<SentItemsPage> {
                         return;
                       }
 
-                      // ถ้ามีข้อมูลไรเดอร์ครบ (lat,lng) ค่อยสร้าง LatLng ไม่งั้นให้เป็น null
-                      LatLng? riderLatLng;
-                      if (v.rider != null &&
-                          v.rider!.lat != null &&
-                          v.rider!.lng != null) {
-                        riderLatLng = LatLng(v.rider!.lat!, v.rider!.lng!);
-                      }
-
+                      // เปิดหน้าแผนที่ RiderMapPage โดยส่ง orderId + จุดพิกัดทั้งสอง
                       Get.to(
                         () => RiderMapPage(
-                          riderLatLng: riderLatLng, // <-- อาจเป็น null
+                          orderId: v.order.orderId
+                              .toString(), // ✅ ส่ง orderId เข้าไป
                           senderLatLng: sender,
                           receiverLatLng: receiver,
-                          riderName: v.rider?.name,
-                          phone: v.rider?.phone,
-                          plate: v.rider?.plateNo,
-                          avatarUrl: v.rider?.riderImage,
-                          statusText: status,
                         ),
                       );
                     },

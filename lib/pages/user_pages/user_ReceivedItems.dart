@@ -110,23 +110,16 @@ class _ReceivedItemsPageState extends State<ReceivedItemsPage> {
                         return;
                       }
 
-                      LatLng? riderLatLng;
                       if (v.rider != null &&
                           v.rider!.lat != null &&
-                          v.rider!.lng != null) {
-                        riderLatLng = LatLng(v.rider!.lat!, v.rider!.lng!);
-                      }
+                          v.rider!.lng != null) {}
 
                       Get.to(
                         () => RiderMapPage(
-                          riderLatLng: riderLatLng,
+                          orderId: v.order.orderId
+                              .toString(), // ✅ ส่ง orderId เข้าไป
                           senderLatLng: senderLatLng,
                           receiverLatLng: receiverLatLng,
-                          riderName: v.rider?.name,
-                          phone: v.rider?.phone,
-                          plate: v.rider?.plateNo,
-                          avatarUrl: v.rider?.riderImage,
-                          statusText: status,
                         ),
                       );
                     },
@@ -319,19 +312,7 @@ class _ReceivedCard extends StatelessWidget {
             SizedBox(
               height: 32,
               child: ElevatedButton.icon(
-                onPressed: () {
-                  Get.to(
-                    () => RiderMapPage(
-                      riderLatLng: LatLng(16.2458, 103.2500),
-                      senderLatLng: LatLng(16.2430, 103.2480),
-                      receiverLatLng: LatLng(16.2400, 103.2550),
-                      riderName: 'นายสมชาย เดลิเวอรี่',
-                      phone: '099-999-9999',
-                      plate: '8กพ 877',
-                      statusText: '[3] กำลังจัดส่ง',
-                    ),
-                  );
-                },
+                onPressed: onMapTap, // ← ใช้ callback ที่ส่งมาจากหน้า list
                 icon: const Icon(Icons.location_on_outlined, size: 16),
                 label: const Text('แผนที่', style: TextStyle(fontSize: 12)),
                 style: ElevatedButton.styleFrom(

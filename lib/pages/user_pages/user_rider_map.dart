@@ -1,40 +1,138 @@
 // lib/pages/user_pages/user_rider_map.dart
+import 'dart:async';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 
-class RiderMapPage extends StatelessWidget {
+class RiderMapPage extends StatefulWidget {
   const RiderMapPage({
     super.key,
-    this.riderLatLng, // <-- ทำให้เป็น nullable
+    required this.orderId,
     required this.senderLatLng,
     required this.receiverLatLng,
-    this.riderName,
-    this.statusText,
-    this.phone,
-    this.plate,
-    this.avatarUrl,
   });
 
-  final LatLng? riderLatLng; // <-- nullable
+  final String orderId;
   final LatLng senderLatLng;
   final LatLng receiverLatLng;
 
-  // ข้อมูลไรเดอร์ก็ให้ nullable เช่นกัน
-  final String? riderName;
-  final String? statusText;
-  final String? phone;
-  final String? plate;
-  final String? avatarUrl;
+  @override
+  State<RiderMapPage> createState() => _RiderMapPageState();
+}
+
+class _RiderMapPageState extends State<RiderMapPage> {
+  static const bg = Color(0xFFD2C2F1);
+
+  // ✅ เพิ่ม controller
+  final MapController _mapController = MapController();
+
+  // ข้อมูลไรเดอร์
+  LatLng? _riderLatLng;
+  String? _riderName;
+  String? _riderPhone;
+  String? _riderPlate;
+  String? _riderAvatarUrl;
+
+  int _currentStatus = 0;
+  String get _statusText {
+    switch (_currentStatus) {
+      case 1:
+        return 'รอไรเดอร์รับงาน';
+      case 2:
+        return 'ไรเดอร์กำลังมารับสินค้า';
+      case 3:
+        return 'กำลังจัดส่ง';
+      case 4:
+        return 'จัดส่งสำเร็จ';
+      default:
+        return '-';
+    }
+  }
+
+  StreamSubscription<DocumentSnapshot<Map<String, dynamic>>>? _orderSub;
+  StreamSubscription<DocumentSnapshot<Map<String, dynamic>>>? _riderSub;
+  final _db = FirebaseFirestore.instance;
+
+  @override
+  void initState() {
+    super.initState();
+    _listenOrderAndRider();
+  }
+
+  @override
+  void dispose() {
+    _orderSub?.cancel();
+    _riderSub?.cancel();
+    super.dispose();
+  }
+
+  void _listenOrderAndRider() {
+    _orderSub = _db.collection('orders').doc(widget.orderId).snapshots().listen(
+      (snap) {
+        if (!snap.exists) return;
+
+        final data = snap.data()!;
+        final riderId = data['rider_id'] as String?;
+        final st = (data['current_status'] ?? 0) as int;
+
+        if (mounted) setState(() => _currentStatus = st);
+
+        if (riderId != null && riderId.isNotEmpty) {
+          _listenRider(riderId);
+        } else {
+          _riderSub?.cancel();
+          if (mounted) {
+            setState(() {
+              _riderLatLng = null;
+              _riderName = null;
+              _riderPhone = null;
+              _riderPlate = null;
+              _riderAvatarUrl = null;
+            });
+          }
+        }
+      },
+    );
+  }
+
+  // ✅ ฟังตำแหน่งไรเดอร์ และขยับ marker + กล้อง
+  void _listenRider(String riderId) {
+    _riderSub?.cancel();
+    _riderSub = _db.collection('riders').doc(riderId).snapshots().listen((
+      snap,
+    ) {
+      if (!snap.exists) return;
+      final r = snap.data()!;
+      final lat = (r['lat'] as num?)?.toDouble();
+      final lng = (r['lng'] as num?)?.toDouble();
+
+      if (lat != null && lng != null) {
+        final newPos = LatLng(lat, lng);
+        if (mounted) {
+          setState(() {
+            _riderLatLng = newPos;
+            _riderName = r['name'] as String?;
+            _riderPhone = r['phone'] as String?;
+            _riderPlate = r['plate_no'] as String?;
+            _riderAvatarUrl = r['rider_image'] as String?;
+          });
+
+          // ✅ ขยับกล้องไปยังตำแหน่งไรเดอร์ใหม่แบบ smooth
+          try {
+            final zoom = _mapController.camera.zoom;
+            _mapController.move(newPos, zoom);
+          } catch (_) {}
+        }
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
-    const bg = Color(0xFFD2C2F1);
-
-    // โฟกัสเริ่มที่ “กลางระหว่างผู้ส่งกับผู้รับ”
-    final initial = LatLng(
-      (senderLatLng.latitude + receiverLatLng.latitude) / 2,
-      (senderLatLng.longitude + receiverLatLng.longitude) / 2,
+    final middle = LatLng(
+      (widget.senderLatLng.latitude + widget.receiverLatLng.latitude) / 2,
+      (widget.senderLatLng.longitude + widget.receiverLatLng.longitude) / 2,
     );
 
     return Scaffold(
@@ -50,8 +148,9 @@ class RiderMapPage extends StatelessWidget {
       body: Stack(
         children: [
           FlutterMap(
+            mapController: _mapController, // ✅ ผูก controller
             options: MapOptions(
-              initialCenter: riderLatLng ?? initial,
+              initialCenter: _riderLatLng ?? middle,
               initialZoom: 13.5,
             ),
             children: [
@@ -60,12 +159,10 @@ class RiderMapPage extends StatelessWidget {
                     'https://tile.thunderforest.com/atlas/{z}/{x}/{y}.png?apikey=6949d257c8de4157a028c7a44b05af3d',
                 userAgentPackageName: 'com.example.mobile_delivery',
               ),
-              // วาด Marker เฉพาะที่มี
               MarkerLayer(
                 markers: [
-                  // ผู้ส่ง
                   Marker(
-                    point: senderLatLng,
+                    point: widget.senderLatLng,
                     width: 40,
                     height: 40,
                     child: const Icon(
@@ -74,9 +171,8 @@ class RiderMapPage extends StatelessWidget {
                       size: 36,
                     ),
                   ),
-                  // ผู้รับ
                   Marker(
-                    point: receiverLatLng,
+                    point: widget.receiverLatLng,
                     width: 40,
                     height: 40,
                     child: const Icon(
@@ -85,10 +181,9 @@ class RiderMapPage extends StatelessWidget {
                       size: 36,
                     ),
                   ),
-                  // ไรเดอร์ (มีค่อยวาด)
-                  if (riderLatLng != null)
+                  if (_riderLatLng != null)
                     Marker(
-                      point: riderLatLng!,
+                      point: _riderLatLng!,
                       width: 40,
                       height: 40,
                       child: const Icon(
@@ -102,7 +197,7 @@ class RiderMapPage extends StatelessWidget {
             ],
           ),
 
-          // Legend มุมขวาบน (ถ้ามีไรเดอร์จะโชว์เพิ่มอีกอัน)
+          // ✅ Legend
           Positioned(
             top: 12,
             right: 12,
@@ -119,7 +214,7 @@ class RiderMapPage extends StatelessWidget {
                   const SizedBox(width: 4),
                   const Text('ผู้ส่ง'),
                   const SizedBox(width: 8),
-                  if (riderLatLng != null) ...[
+                  if (_riderLatLng != null) ...[
                     const Icon(
                       Icons.delivery_dining,
                       color: Colors.redAccent,
@@ -137,8 +232,8 @@ class RiderMapPage extends StatelessWidget {
             ),
           ),
 
-          // แผงข้อมูลไรเดอร์ด้านล่าง “แสดงเฉพาะเมื่อมีไรเดอร์”
-          if (riderLatLng != null)
+          // ✅ ข้อมูลไรเดอร์
+          if (_riderLatLng != null)
             Positioned(
               left: 16,
               right: 16,
@@ -162,10 +257,12 @@ class RiderMapPage extends StatelessWidget {
                       radius: 26,
                       backgroundColor: Colors.white,
                       backgroundImage:
-                          (avatarUrl != null && avatarUrl!.isNotEmpty)
-                          ? NetworkImage(avatarUrl!)
+                          (_riderAvatarUrl != null &&
+                              _riderAvatarUrl!.isNotEmpty)
+                          ? NetworkImage(_riderAvatarUrl!)
                           : null,
-                      child: (avatarUrl == null || avatarUrl!.isEmpty)
+                      child:
+                          (_riderAvatarUrl == null || _riderAvatarUrl!.isEmpty)
                           ? const Icon(Icons.person)
                           : null,
                     ),
@@ -185,15 +282,15 @@ class RiderMapPage extends StatelessWidget {
                           Row(
                             children: [
                               Expanded(
-                                child: Text('ชื่อ : ${riderName ?? '-'}'),
+                                child: Text('ชื่อ : ${_riderName ?? '-'}'),
                               ),
-                              Text('สถานะ: ${statusText ?? '-'}'),
+                              Text('สถานะ: $_statusText'),
                             ],
                           ),
                           const SizedBox(height: 2),
-                          Text('เบอร์โทร : ${phone ?? '-'}'),
+                          Text('เบอร์โทร : ${_riderPhone ?? '-'}'),
                           const SizedBox(height: 2),
-                          Text('ทะเบียนรถ : ${plate ?? '-'}'),
+                          Text('ทะเบียนรถ : ${_riderPlate ?? '-'}'),
                         ],
                       ),
                     ),
