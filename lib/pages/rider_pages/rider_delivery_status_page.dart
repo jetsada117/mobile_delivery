@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -5,9 +6,12 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:mobile_delivery/models/rider_data.dart';
+import 'package:mobile_delivery/providers/auth_provider.dart';
+import 'package:provider/provider.dart';
 
 class RiderDeliveryStatusPage extends StatefulWidget {
-  final String orderId; // << รับ orderId เข้ามา
+  final String orderId;
   const RiderDeliveryStatusPage({super.key, required this.orderId});
 
   @override
@@ -19,6 +23,8 @@ class _RiderDeliveryStatusPageState extends State<RiderDeliveryStatusPage> {
   static const bg = Color(0xFFD2C2F1);
   static const cardBg = Color(0xFFF4EBFF);
   static const borderCol = Color(0x55000000);
+  final MapController _mapController = MapController();
+  StreamSubscription<Position>? _posSub;
 
   final _picker = ImagePicker();
 
@@ -31,9 +37,15 @@ class _RiderDeliveryStatusPageState extends State<RiderDeliveryStatusPage> {
   void initState() {
     super.initState();
     _loadPositions();
+    _startPositionStream();
   }
 
-  // ดึง path เป็น String ไม่ว่าจะเก็บมาเป็นอะไร
+  @override
+  void dispose() {
+    _posSub?.cancel();
+    super.dispose();
+  }
+
   String? _pathFrom(dynamic v) {
     if (v == null) return null;
     if (v is DocumentReference) return v.path;
@@ -53,7 +65,6 @@ class _RiderDeliveryStatusPageState extends State<RiderDeliveryStatusPage> {
 
   Future<void> _loadPositions() async {
     try {
-      // 1) ขอ permission และตำแหน่งไรเดอร์
       final perm = await Geolocator.requestPermission();
       if (perm == LocationPermission.deniedForever) {
         throw 'ไม่ได้รับสิทธิ์ตำแหน่ง (deniedForever)';
@@ -67,7 +78,6 @@ class _RiderDeliveryStatusPageState extends State<RiderDeliveryStatusPage> {
       final p = await Geolocator.getCurrentPosition();
       final rider = LatLng(p.latitude, p.longitude);
 
-      // 2) อ่านออเดอร์
       final orderDoc = await FirebaseFirestore.instance
           .collection('orders')
           .doc(widget.orderId)
@@ -129,6 +139,7 @@ class _RiderDeliveryStatusPageState extends State<RiderDeliveryStatusPage> {
       body: Stack(
         children: [
           FlutterMap(
+            mapController: _mapController, // << เพิ่ม
             options: MapOptions(
               initialCenter: initialCenter,
               initialZoom: 14.5,
@@ -417,9 +428,58 @@ class _RiderDeliveryStatusPageState extends State<RiderDeliveryStatusPage> {
       }
     }
   }
+
+  Future<void> _startPositionStream() async {
+    LocationPermission perm = await Geolocator.checkPermission();
+    if (perm == LocationPermission.denied) {
+      perm = await Geolocator.requestPermission();
+    }
+    if (perm == LocationPermission.deniedForever) return;
+
+    const settings = LocationSettings(
+      accuracy: LocationAccuracy.best,
+      distanceFilter: 1,
+    );
+
+    _posSub?.cancel();
+    _posSub = Geolocator.getPositionStream(locationSettings: settings).listen((
+      pos,
+    ) {
+      final newPos = LatLng(pos.latitude, pos.longitude);
+
+      if (!mounted) return;
+
+      setState(() => riderPos = newPos);
+
+      _updateRiderLocationToFirestore(newPos);
+    });
+  }
+
+  Future<void> _updateRiderLocationToFirestore(LatLng pos) async {
+    try {
+      final auth = context.read<AuthProvider>();
+      final RiderData? rider = auth.currentRider;
+      if (rider == null) {
+        debugPrint('⚠️ ไม่มีข้อมูลไรเดอร์ใน provider');
+        return;
+      }
+
+      await FirebaseFirestore.instance
+          .collection('riders')
+          .doc(rider.id)
+          .update({
+            'lat': pos.latitude,
+            'lng': pos.longitude,
+            'updated_at': FieldValue.serverTimestamp(),
+          });
+
+      debugPrint('✅ อัปเดตตำแหน่งไรเดอร์เรียบร้อย (riders/${rider.id})');
+    } catch (e) {
+      debugPrint('❌ อัปเดตตำแหน่งไม่สำเร็จ: $e');
+    }
+  }
 }
 
-/* Widgets ย่อย */
 class _StatusPill extends StatelessWidget {
   const _StatusPill({required this.icon, this.iconColor = Colors.black87});
   final IconData icon;
