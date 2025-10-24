@@ -157,7 +157,9 @@ class _SentItemsPageState extends State<SentItemsPage> {
                 for (final d in q.docs) {
                   final data = d.data();
 
-                  // order_id ใช้เป็น group key (ให้ไรเดอร์/ผู้รับในออเดอร์เดียวกันสีเดียวกัน)
+                  final cs = (data['current_status'] as num?)?.toInt();
+                  if (cs == 4) continue;
+
                   final String orderKey =
                       ((data['order_id'] as num?)?.toInt().toString()) ?? d.id;
 

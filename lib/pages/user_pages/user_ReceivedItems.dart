@@ -173,6 +173,9 @@ class _ReceivedItemsPageState extends State<ReceivedItemsPage> {
                 for (final d in q.docs) {
                   final data = d.data();
 
+                  final cs = (data['current_status'] as num?)?.toInt();
+                  if (cs == 4) continue;
+
                   final String group = (data['order_id']?.toString() ?? d.id)
                       .toString();
                   final String? sendId = (data['send_id'] as String?)?.trim();
