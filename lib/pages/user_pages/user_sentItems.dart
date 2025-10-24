@@ -4,10 +4,10 @@ import 'package:get/get.dart'; //ขอ A นะครับ จุ๊บม๊�
 import 'package:latlong2/latlong.dart'; //ขอ A นะครับ จุ๊บม๊วฟ
 import 'package:mobile_delivery/models/send_item_view.dart'; //ขอ A นะครับ จุ๊บม๊วฟ
 import 'package:mobile_delivery/pages/user_pages/user_receiveditems.dart'; //ขอ A นะครับ จุ๊บม๊วฟ
-import 'package:mobile_delivery/pages/user_pages/user_combined_map.dart'; //ขอ A นะครับ จุ๊บม๊วฟ
 import 'package:mobile_delivery/pages/user_pages/user_home.dart'; //ขอ A นะครับ จุ๊บม๊วฟ
 import 'package:mobile_delivery/pages/user_pages/user_profile.dart'; //ขอ A นะครับ จุ๊บม๊วฟ
 import 'package:mobile_delivery/pages/user_pages/user_rider_map.dart'; //ขอ A นะครับ จุ๊บม๊วฟ
+import 'package:mobile_delivery/pages/user_pages/user_rider_map_all.dart';
 import 'package:mobile_delivery/pages/user_pages/user_statuschat.dart'; //ขอ A นะครับ จุ๊บม๊วฟ
 import 'package:mobile_delivery/providers/auth_provider.dart'; //ขอ A นะครับ จุ๊บม๊วฟ
 import 'package:mobile_delivery/repositories/send_item_view.dart'; //ขอ A นะครับ จุ๊บม๊วฟ
@@ -129,23 +129,113 @@ class _SentItemsPageState extends State<SentItemsPage> {
         child: SizedBox(
           height: 36,
           child: ElevatedButton.icon(
-            onPressed: () {
-              final points = <LatLng>[
-                const LatLng(16.2448, 103.2520),
-                const LatLng(16.2380, 103.2425),
-                const LatLng(16.2325, 103.2580),
-              ];
-              Get.to(
-                () => CombinedMapPage(
-                  points: points,
-                  riderName: 'นายสมชาย เดลิเวอรี่',
-                  statusText: '[3]',
-                  phone: '012-345-6789',
-                  plate: '8กพ 877',
-                  avatarUrl: 'https://i.pravatar.cc/100?img=15',
-                ),
-              );
+            onPressed: () async {
+              final uid = context.read<AuthProvider>().currentUser?.uid;
+              if (uid == null || uid.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('กรุณาเข้าสู่ระบบก่อน')),
+                );
+                return;
+              }
+
+              final db = FirebaseFirestore.instance;
+
+              try {
+                final q = await db
+                    .collection('orders')
+                    .where('send_id', isEqualTo: uid)
+                    .get();
+
+                if (q.docs.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('ยังไม่มีออเดอร์ของคุณ')),
+                  );
+                  return;
+                }
+
+                final receiverPins = <ReceiverPin>[];
+                final riderPins = <RiderPin>[];
+                final seenReceivers = <String>{};
+                final seenRiders = <String>{};
+
+                for (final d in q.docs) {
+                  final data = d.data();
+                  final String? receiveAt = data['receive_at'];
+                  final String? receiveId = data['receive_id'];
+                  final String? riderId = (data['rider_id'] as String?)?.trim();
+
+                  final recPos = await _latLngFromPath(receiveAt);
+                  if (recPos != null &&
+                      receiveId != null &&
+                      !seenReceivers.contains(receiveId)) {
+                    String recName = 'ผู้รับ';
+                    try {
+                      final u = await db
+                          .collection('users')
+                          .doc(receiveId)
+                          .get();
+                      if (u.exists) {
+                        recName = (u.data()?['name'] as String?) ?? recName;
+                      }
+                    } catch (_) {}
+                    receiverPins.add(ReceiverPin(name: recName, pos: recPos));
+                    seenReceivers.add(receiveId);
+                  }
+
+                  // 2.2 ไรเดอร์ (ถ้ามีในออเดอร์)
+                  if (riderId != null &&
+                      riderId.isNotEmpty &&
+                      !seenRiders.contains(riderId)) {
+                    try {
+                      final r = await db
+                          .collection('riders')
+                          .doc(riderId)
+                          .get();
+                      if (r.exists) {
+                        final m = r.data()!;
+                        final lat = (m['lat'] as num?)?.toDouble();
+                        final lng = (m['lng'] as num?)?.toDouble();
+                        if (lat != null && lng != null) {
+                          riderPins.add(
+                            RiderPin(
+                              name: (m['name'] as String?) ?? 'ไรเดอร์',
+                              pos: LatLng(lat, lng),
+                              phone: m['phone'] as String?,
+                              plate: m['plate_no'] as String?,
+                              avatarUrl: m['rider_image'] as String?,
+                            ),
+                          );
+                          seenRiders.add(riderId);
+                        }
+                      }
+                    } catch (_) {}
+                  }
+                }
+
+                if (receiverPins.isEmpty && riderPins.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('ไม่มีจุดผู้รับ/ไรเดอร์ให้แสดงบนแผนที่'),
+                    ),
+                  );
+                  return;
+                }
+
+                // 3) เปิดหน้าแผนที่รวม
+                Get.to(
+                  () => CombinedLiveMapPage(
+                    title: 'แผนที่รวมออเดอร์ของฉัน',
+                    receivers: receiverPins,
+                    riders: riderPins,
+                  ),
+                );
+              } catch (e) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('ดึงข้อมูลไม่สำเร็จ: $e')),
+                );
+              }
             },
+
             icon: const Icon(Icons.map_outlined, size: 16),
             label: const Text('แผนที่รวม', style: TextStyle(fontSize: 12)),
             style: ElevatedButton.styleFrom(
