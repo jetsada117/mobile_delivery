@@ -191,39 +191,128 @@ class _UserRegisterState extends State<UserRegister> {
                                 height: 240,
                                 child: ClipRRect(
                                   borderRadius: BorderRadius.circular(12),
-                                  child: FlutterMap(
-                                    mapController: mapController,
-                                    options: MapOptions(
-                                      initialCenter:
-                                          _center ?? const LatLng(0, 0),
-                                      initialZoom: 15.2,
-                                      onTap: (tapPosition, point) {
-                                        log(point.toString());
-                                      },
-                                    ),
+                                  child: Stack(
                                     children: [
-                                      TileLayer(
-                                        urlTemplate:
-                                            'https://tile.thunderforest.com/atlas/{z}/{x}/{y}.png?apikey=6949d257c8de4157a028c7a44b05af3d',
-                                        userAgentPackageName:
-                                            'com.example.mobile_delivery',
-                                      ),
-                                      MarkerLayer(
-                                        markers: [
-                                          Marker(
-                                            point:
-                                                _center ?? const LatLng(0, 0),
-                                            width: 40,
-                                            height: 40,
-                                            child: const Icon(
-                                              Icons.location_on,
-                                              color: Colors.red,
-                                            ),
+                                      FlutterMap(
+                                        mapController: mapController,
+                                        options: MapOptions(
+                                          initialCenter:
+                                              _center ??
+                                              const LatLng(
+                                                13.7563,
+                                                100.5018,
+                                              ), // fallback กรุงเทพฯ
+                                          initialZoom: _zoom,
+                                          onTap: (tapPosition, point) {
+                                            setState(() {
+                                              _center =
+                                                  point; // ✅ อัปเดตตำแหน่งที่เลือก
+                                            });
+                                            mapController.move(
+                                              point,
+                                              _zoom,
+                                            ); // ✅ ขยับกล้องไปยังจุดที่แตะ
+                                            ScaffoldMessenger.of(
+                                              context,
+                                            ).showSnackBar(
+                                              SnackBar(
+                                                content: Text(
+                                                  'เลือกพิกัดแล้ว: '
+                                                  '${point.latitude.toStringAsFixed(6)}, '
+                                                  '${point.longitude.toStringAsFixed(6)}',
+                                                ),
+                                                duration: const Duration(
+                                                  seconds: 2,
+                                                ),
+                                              ),
+                                            );
+                                          },
+                                          interactionOptions:
+                                              const InteractionOptions(
+                                                flags:
+                                                    InteractiveFlag.all &
+                                                    ~InteractiveFlag.rotate,
+                                              ),
+                                        ),
+                                        children: [
+                                          TileLayer(
+                                            urlTemplate:
+                                                'https://tile.thunderforest.com/atlas/{z}/{x}/{y}.png?apikey=6949d257c8de4157a028c7a44b05af3d',
+                                            userAgentPackageName:
+                                                'com.example.mobile_delivery',
                                           ),
+                                          if (_center !=
+                                              null) // ✅ แสดงหมุดเฉพาะเมื่อเลือกแล้ว/มี GPS
+                                            MarkerLayer(
+                                              markers: [
+                                                Marker(
+                                                  point: _center!,
+                                                  width: 40,
+                                                  height: 40,
+                                                  child: const Icon(
+                                                    Icons.location_on,
+                                                    color: Colors.red,
+                                                    size: 40,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
                                         ],
+                                      ),
+
+                                      // ✅ ปุ่มใช้ตำแหน่งปัจจุบัน
+                                      Positioned(
+                                        right: 10,
+                                        bottom: 10,
+                                        child: FloatingActionButton.small(
+                                          backgroundColor: Colors.white,
+                                          foregroundColor: Colors.black87,
+                                          onPressed: () async {
+                                            try {
+                                              final p =
+                                                  await _determinePosition();
+                                              final here = LatLng(
+                                                p.latitude,
+                                                p.longitude,
+                                              );
+                                              setState(() => _center = here);
+                                              mapController.move(here, _zoom);
+                                              ScaffoldMessenger.of(
+                                                context,
+                                              ).showSnackBar(
+                                                const SnackBar(
+                                                  content: Text(
+                                                    'อัปเดตตำแหน่งปัจจุบันแล้ว',
+                                                  ),
+                                                ),
+                                              );
+                                            } catch (e) {
+                                              ScaffoldMessenger.of(
+                                                context,
+                                              ).showSnackBar(
+                                                SnackBar(
+                                                  content: Text(
+                                                    'ไม่สามารถดึงตำแหน่ง: $e',
+                                                  ),
+                                                ),
+                                              );
+                                            }
+                                          },
+                                          child: const Icon(Icons.my_location),
+                                        ),
                                       ),
                                     ],
                                   ),
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                _center == null
+                                    ? 'แตะบนแผนที่เพื่อเลือกตำแหน่งที่อยู่'
+                                    : 'เลือกแล้ว: ${_center!.latitude.toStringAsFixed(6)}, ${_center!.longitude.toStringAsFixed(6)}',
+                                style: const TextStyle(
+                                  fontSize: 13,
+                                  color: Colors.black54,
                                 ),
                               ),
                             ],
@@ -554,7 +643,7 @@ class _UserRegisterState extends State<UserRegister> {
   }
 
   Future<void> addData() async {
-    // validate ฟิลด์
+    // ✅ ตรวจสอบความถูกต้องของข้อมูลก่อนบันทึก
     if (_username.text.isEmpty ||
         _phone.text.isEmpty ||
         _password.text.isEmpty ||
@@ -568,15 +657,28 @@ class _UserRegisterState extends State<UserRegister> {
     if (_avatar == null) {
       return _alert("ต้องอัปโหลดรูป", "กรุณาเลือกรูปโปรไฟล์ก่อนลงทะเบียน");
     }
+    if (_center == null) {
+      return _alert(
+        "ยังไม่ได้เลือกตำแหน่ง",
+        "กรุณาแตะบนแผนที่เพื่อเลือกตำแหน่งก่อนลงทะเบียน",
+      );
+    }
 
     try {
-      // ---------- สร้าง userId ----------
-      // (ทางที่ดี: ให้ Firestore gen id เอง)
-      // final userRef = await db.collection('users').add({...});
-      // final userId = userRef.id;
+      final col = db.collection('users');
 
-      // แต่ถ้าจะใช้ count()+1 ตามโค้ดเดิม:
-      final col = db.collection('users'); // 👈 ใช้ 'users'
+      // ✅ ตรวจสอบเบอร์โทรซ้ำ
+      final dupCheck = await col
+          .where('phone', isEqualTo: _phone.text.trim())
+          .get();
+      if (dupCheck.docs.isNotEmpty) {
+        return _alert(
+          "เบอร์โทรนี้ถูกใช้งานแล้ว",
+          "กรุณาใช้เบอร์โทรอื่น หรือเข้าสู่ระบบด้วยเบอร์นี้",
+        );
+      }
+
+      // ---------- สร้าง userId ----------
       final snapshot = await col.count().get();
       final userId = (snapshot.count! + 1).toString();
       final userRef = col.doc(userId);
@@ -584,35 +686,35 @@ class _UserRegisterState extends State<UserRegister> {
       // ---------- อัปโหลดรูปไป Supabase ----------
       final photoUrl = await _uploadAvatarToSupabase(
         userId: userId,
-        file: _avatar!, // มั่นใจว่าไม่ null เพราะ validate แล้ว
+        file: _avatar!,
       );
 
-      // ---------- บันทึก user + url ----------
+      // ---------- บันทึก user ----------
       final userData = {
         'name': _username.text.trim(),
         'phone': _phone.text.trim(),
-        'password': _password.text.trim(), // โปรดเปลี่ยนเป็น hash ในงานจริง
-        'user_image': photoUrl, // 👈 URL จาก Supabase
+        'password': _password.text.trim(), // *แนะนำให้ hash จริงใน production*
+        'user_image': photoUrl,
         'created_at': FieldValue.serverTimestamp(),
       };
       await userRef.set(userData);
 
-      // ---------- บันทึก address เป็น sub-collection ----------
+      // ---------- บันทึก address + พิกัด ----------
       final addrData = {
         'address': _address.text.trim(),
-        'lat': _center?.latitude,
-        'lng': _center?.longitude,
+        'lat': _center!.latitude,
+        'lng': _center!.longitude,
         'created_at': FieldValue.serverTimestamp(),
       };
-      await userRef.collection('addresses').add(addrData); // 👈 ใช้ 'addresses'
+      await userRef.collection('addresses').add(addrData);
 
-      log("User: $userData");
-      log("Address: $addrData");
+      log("✅ User saved: $userData");
+      log("✅ Address saved: $addrData");
 
-      await _alert("สำเร็จ", "สมัครสมาชิกเรียบร้อยแล้ว");
+      await _alert("สำเร็จ", "สมัครสมาชิกเรียบร้อยแล้ว!");
       if (mounted) Get.to(() => const LoginPage());
     } catch (e, st) {
-      log('addData error: $e\n$st');
+      log('❌ addData error: $e\n$st');
       _alert("ผิดพลาด", e.toString());
     }
   }

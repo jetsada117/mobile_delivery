@@ -225,17 +225,6 @@ class _EditAddressPageState extends State<EditAddressPage> {
                             style: const TextStyle(color: Colors.black54),
                           ),
                         ),
-                        if (_pickedLatLng != null)
-                          TextButton(
-                            onPressed: () {
-                              setState(() {
-                                _pickedLatLng = null;
-                                _latCtrl.clear();
-                                _lngCtrl.clear();
-                              });
-                            },
-                            child: const Text('ล้างพิกัด'),
-                          ),
                       ],
                     ),
                     const SizedBox(height: 16),
