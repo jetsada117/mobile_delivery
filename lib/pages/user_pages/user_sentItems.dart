@@ -1,18 +1,18 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/material.dart'; //ขอ A นะครับ จุ๊บม๊วฟ
-import 'package:get/get.dart'; //ขอ A นะครับ จุ๊บม๊วฟ
-import 'package:latlong2/latlong.dart'; //ขอ A นะครับ จุ๊บม๊วฟ
-import 'package:mobile_delivery/models/send_item_view.dart'; //ขอ A นะครับ จุ๊บม๊วฟ
-import 'package:mobile_delivery/pages/user_pages/user_receiveditems.dart'; //ขอ A นะครับ จุ๊บม๊วฟ
-import 'package:mobile_delivery/pages/user_pages/user_home.dart'; //ขอ A นะครับ จุ๊บม๊วฟ
-import 'package:mobile_delivery/pages/user_pages/user_profile.dart'; //ขอ A นะครับ จุ๊บม๊วฟ
-import 'package:mobile_delivery/pages/user_pages/user_rider_map.dart'; //ขอ A นะครับ จุ๊บม๊วฟ
+import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:latlong2/latlong.dart';
+import 'package:mobile_delivery/models/send_item_view.dart';
+import 'package:mobile_delivery/pages/user_pages/user_receiveditems.dart';
+import 'package:mobile_delivery/pages/user_pages/user_home.dart';
+import 'package:mobile_delivery/pages/user_pages/user_profile.dart';
+import 'package:mobile_delivery/pages/user_pages/user_rider_map.dart';
 import 'package:mobile_delivery/pages/user_pages/user_rider_map_all.dart';
-import 'package:mobile_delivery/pages/user_pages/user_statuschat.dart'; //ขอ A นะครับ จุ๊บม๊วฟ
-import 'package:mobile_delivery/providers/auth_provider.dart'; //ขอ A นะครับ จุ๊บม๊วฟ
-import 'package:mobile_delivery/repositories/send_item_view.dart'; //ขอ A นะครับ จุ๊บม๊วฟ
-import 'package:mobile_delivery/utils/functions.dart'; //ขอ A นะครับ จุ๊บม๊วฟ
-import 'package:provider/provider.dart'; //ขอ A นะครับ จุ๊บม๊วฟ
+import 'package:mobile_delivery/pages/user_pages/user_statuschat.dart';
+import 'package:mobile_delivery/providers/auth_provider.dart';
+import 'package:mobile_delivery/repositories/send_item_view.dart';
+import 'package:mobile_delivery/utils/functions.dart';
+import 'package:provider/provider.dart';
 
 class SentItemsPage extends StatefulWidget {
   const SentItemsPage({super.key});
@@ -43,7 +43,6 @@ class _SentItemsPageState extends State<SentItemsPage> {
           style: TextStyle(fontWeight: FontWeight.w800),
         ),
       ),
-
       body: Stack(
         children: [
           StreamBuilder<List<SentItemView>>(
@@ -106,11 +105,9 @@ class _SentItemsPageState extends State<SentItemsPage> {
                         return;
                       }
 
-                      // เปิดหน้าแผนที่ RiderMapPage โดยส่ง orderId + จุดพิกัดทั้งสอง
                       Get.to(
                         () => RiderMapPage(
-                          orderId: v.order.orderId
-                              .toString(), // ✅ ส่ง orderId เข้าไป
+                          orderId: v.order.orderId.toString(),
                           senderLatLng: sender,
                           receiverLatLng: receiver,
                         ),
@@ -123,7 +120,6 @@ class _SentItemsPageState extends State<SentItemsPage> {
           ),
         ],
       ),
-
       floatingActionButton: SafeArea(
         minimum: const EdgeInsets.only(right: 8, bottom: 8),
         child: SizedBox(
@@ -160,10 +156,16 @@ class _SentItemsPageState extends State<SentItemsPage> {
 
                 for (final d in q.docs) {
                   final data = d.data();
-                  final String? receiveAt = data['receive_at'];
-                  final String? receiveId = data['receive_id'];
+
+                  // order_id ใช้เป็น group key (ให้ไรเดอร์/ผู้รับในออเดอร์เดียวกันสีเดียวกัน)
+                  final String orderKey =
+                      ((data['order_id'] as num?)?.toInt().toString()) ?? d.id;
+
+                  final String? receiveAt = data['receive_at'] as String?;
+                  final String? receiveId = data['receive_id'] as String?;
                   final String? riderId = (data['rider_id'] as String?)?.trim();
 
+                  // ---- ผู้รับ ----
                   final recPos = await _latLngFromPath(receiveAt);
                   if (recPos != null &&
                       receiveId != null &&
@@ -178,11 +180,17 @@ class _SentItemsPageState extends State<SentItemsPage> {
                         recName = (u.data()?['name'] as String?) ?? recName;
                       }
                     } catch (_) {}
-                    receiverPins.add(ReceiverPin(name: recName, pos: recPos));
+                    receiverPins.add(
+                      ReceiverPin(
+                        group: orderKey, // << ใช้ orderKey เป็น group
+                        name: recName,
+                        pos: recPos,
+                      ),
+                    );
                     seenReceivers.add(receiveId);
                   }
 
-                  // 2.2 ไรเดอร์ (ถ้ามีในออเดอร์)
+                  // ---- ไรเดอร์ ----
                   if (riderId != null &&
                       riderId.isNotEmpty &&
                       !seenRiders.contains(riderId)) {
@@ -198,9 +206,13 @@ class _SentItemsPageState extends State<SentItemsPage> {
                         if (lat != null && lng != null) {
                           riderPins.add(
                             RiderPin(
+                              group: orderKey, // << ใช้ orderKey เป็น group
+                              riderId: riderId,
                               name: (m['name'] as String?) ?? 'ไรเดอร์',
                               pos: LatLng(lat, lng),
-                              phone: m['phone'] as String?,
+                              phone:
+                                  m['phone']
+                                      as String?, // << ดึงจากเอกสาร rider
                               plate: m['plate_no'] as String?,
                               avatarUrl: m['rider_image'] as String?,
                             ),
@@ -221,7 +233,6 @@ class _SentItemsPageState extends State<SentItemsPage> {
                   return;
                 }
 
-                // 3) เปิดหน้าแผนที่รวม
                 Get.to(
                   () => CombinedLiveMapPage(
                     title: 'แผนที่รวมออเดอร์ของฉัน',
@@ -235,7 +246,6 @@ class _SentItemsPageState extends State<SentItemsPage> {
                 );
               }
             },
-
             icon: const Icon(Icons.map_outlined, size: 16),
             label: const Text('แผนที่รวม', style: TextStyle(fontSize: 12)),
             style: ElevatedButton.styleFrom(
@@ -251,7 +261,6 @@ class _SentItemsPageState extends State<SentItemsPage> {
         ),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
-
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _navIndex,
         type: BottomNavigationBarType.fixed,

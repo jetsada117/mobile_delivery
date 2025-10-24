@@ -160,51 +160,6 @@ class _RiderDeliveryStatusPageState extends State<RiderDeliveryStatusPage> {
               onTap: () => _openProofPopup(context, 'อัปโหลดภาพ'),
             ),
           ),
-          Positioned(
-            left: 12,
-            right: 12,
-            bottom: 20,
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: borderCol),
-                boxShadow: const [
-                  BoxShadow(
-                    color: Color(0x22000000),
-                    blurRadius: 8,
-                    offset: Offset(0, 3),
-                  ),
-                ],
-              ),
-              padding: const EdgeInsets.all(12),
-              child: Row(
-                children: const [
-                  CircleAvatar(
-                    radius: 24,
-                    backgroundImage: NetworkImage(
-                      'https://i.pravatar.cc/100?img=12',
-                    ),
-                  ),
-                  SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'ข้อมูลผู้รับ',
-                          style: TextStyle(fontWeight: FontWeight.w700),
-                        ),
-                        SizedBox(height: 4),
-                        Text('ชื่อ: นายสมชาย เด็กดี'),
-                        Text('เบอร์โทร: 012-345-6789'),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
 
           if (currentStatus == 4)
             Positioned(
