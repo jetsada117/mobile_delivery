@@ -2,13 +2,18 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:get/get_core/src/get_main.dart';
+import 'package:get/route_manager.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:mobile_delivery/models/order_record.dart';
 import 'package:mobile_delivery/models/product_data.dart';
 import 'package:mobile_delivery/models/send_item_view.dart';
 import 'package:mobile_delivery/models/user_address.dart';
 import 'package:mobile_delivery/models/user_data.dart';
+import 'package:mobile_delivery/pages/rider_pages/rider_delivery_status_page.dart';
 import 'package:mobile_delivery/pages/rider_pages/rider_home.dart';
+import 'package:mobile_delivery/providers/auth_provider.dart';
+import 'package:provider/provider.dart';
 
 class RiderAcceptOrderPage extends StatefulWidget {
   const RiderAcceptOrderPage({super.key, required this.orderId});
@@ -97,6 +102,7 @@ class _RiderAcceptOrderPageState extends State<RiderAcceptOrderPage> {
       backgroundColor: bg,
       appBar: AppBar(
         elevation: 0,
+        automaticallyImplyLeading: false,
         backgroundColor: Colors.transparent,
         title: const Text(
           'รายละเอียดออเดอร์',
@@ -313,12 +319,10 @@ class _RiderAcceptOrderPageState extends State<RiderAcceptOrderPage> {
                           height: 44,
                           child: ElevatedButton(
                             onPressed: () {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(
-                                    'รับออเดอร์: ${product?.name ?? "#${view.order.orderId}"}',
-                                  ),
-                                ),
+                              _acceptOrder(
+                                orderDocId: widget.orderId,
+                                sendPos: sendPos,
+                                recvPos: recvPos,
                               );
                             },
                             style: ElevatedButton.styleFrom(
@@ -351,6 +355,105 @@ class _RiderAcceptOrderPageState extends State<RiderAcceptOrderPage> {
     alignment: Alignment.center,
     child: const Icon(Icons.inventory_2, size: 40),
   );
+
+  Future<void> _acceptOrder({
+    required String orderDocId,
+    required LatLng? sendPos,
+    required LatLng? recvPos,
+  }) async {
+    if (_riderPos == null) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('ไม่พบพิกัดปัจจุบันของคุณ')));
+      return;
+    }
+
+    if (sendPos == null && recvPos == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('ออเดอร์นี้ยังไม่มีพิกัดรับ/ส่งสินค้า')),
+      );
+      return;
+    }
+
+    final d = const Distance();
+    double minMeters = double.infinity;
+
+    if (sendPos != null) {
+      minMeters = d.as(LengthUnit.Meter, _riderPos!, sendPos);
+    }
+    if (recvPos != null) {
+      final m = d.as(LengthUnit.Meter, _riderPos!, recvPos);
+      if (m < minMeters) minMeters = m;
+    }
+
+    if (minMeters > 2000) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'ต้องอยู่ใกล้จุดรับหรือจุดส่งไม่เกิน 20 ม. (ตอนนี้ ~${minMeters.toStringAsFixed(1)} ม.)',
+          ),
+        ),
+      );
+      return;
+    }
+
+    final riderId = context.read<AuthProvider>().currentRider?.id;
+    if (riderId == null || riderId.isEmpty) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('ไม่พบข้อมูลไรเดอร์')));
+      return;
+    }
+
+    final bool? confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('ยืนยันการรับออเดอร์'),
+        content: const Text('คุณแน่ใจหรือไม่ว่าต้องการรับออเดอร์นี้?'),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('ยกเลิก'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.black87,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('ยืนยัน'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
+    try {
+      await _db.collection('orders').doc(orderDocId).update({
+        'current_status': 2,
+        'is_active': true,
+        'rider_id': riderId,
+        'updated_at': FieldValue.serverTimestamp(),
+      });
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('รับงานสำเร็จ')));
+
+      Get.to(() => RiderDeliveryStatusPage(orderId: orderDocId));
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('อัปเดตออเดอร์ไม่สำเร็จ: $e')));
+    }
+  }
 }
 
 class _PersonCard extends StatelessWidget {
