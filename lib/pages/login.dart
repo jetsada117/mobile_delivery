@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:mobile_delivery/models/rider_data.dart';
 import 'package:mobile_delivery/models/user_data.dart';
 import 'package:mobile_delivery/pages/chooserole.dart';
+import 'package:mobile_delivery/pages/rider_pages/rider_delivery_status_page.dart';
 import 'package:mobile_delivery/pages/rider_pages/rider_home.dart';
 import 'package:mobile_delivery/pages/user_pages/user_home.dart';
 import 'package:mobile_delivery/providers/auth_provider.dart';
@@ -219,6 +220,31 @@ class _LoginPageState extends State<LoginPage> {
 
         Get.snackbar("สำเร็จ", "เข้าสู่ระบบในฐานะผู้ส่งสินค้า");
 
+        // 🔎 เช็คออเดอร์ที่ไรเดอร์รับอยู่และยัง active
+        final db = FirebaseFirestore.instance;
+        try {
+          final activeQ = await db
+              .collection('orders')
+              .where('rider_id', isEqualTo: rider.id) // id ของไรเดอร์
+              .where('is_active', isEqualTo: true) // ออเดอร์ที่ยังไม่จบ
+              .get();
+
+          if (activeQ.docs.isNotEmpty) {
+            // ถ้ามีหลายรายการ เลือกเอาอันแรก (หรือจะทำ list/ให้เลือกก็ได้)
+            final orderDoc = activeQ.docs.first;
+            final orderDocId =
+                orderDoc.id; // ใช้ doc.id เป็น orderId สำหรับหน้าแผนที่
+
+            // ➜ ไปหน้าแสดงสถานะการส่งทันที
+            Get.to(() => RiderDeliveryStatusPage(orderId: orderDocId));
+            return;
+          }
+        } catch (e) {
+          // ถ้าดึงล้มเหลวก็ปล่อยไปหน้า Home ตามปกติ
+          debugPrint('find active order error: $e');
+        }
+
+        // ถ้าไม่พบออเดอร์ active ➜ ไปหน้า Home ตามเดิม
         Get.to(() => const RiderHomePage());
         return;
       }

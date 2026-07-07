@@ -44,3 +44,9 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Environment Secrets
+secrets.json
+android/app/google-services.json
+
+

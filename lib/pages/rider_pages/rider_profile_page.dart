@@ -4,7 +4,6 @@ import 'package:mobile_delivery/pages/login.dart';
 import 'package:provider/provider.dart';
 import 'package:mobile_delivery/providers/auth_provider.dart';
 import 'package:mobile_delivery/models/rider_data.dart';
-import 'package:mobile_delivery/pages/rider_pages/rider_edit_vehicle.dart';
 import 'package:mobile_delivery/pages/rider_pages/rider_home.dart';
 
 class RiderProfilePage extends StatefulWidget {
@@ -171,24 +170,6 @@ class _RiderProfilePageState extends State<RiderProfilePage> {
                     ),
                   ),
                   const SizedBox(width: 12),
-                  ElevatedButton(
-                    onPressed: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => const RiderEditVehiclePage(),
-                        ),
-                      );
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: linkBlue,
-                      foregroundColor: Colors.white,
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                    child: const Text('แก้ไขยานพาหนะ'),
-                  ),
                 ],
               ),
             ),

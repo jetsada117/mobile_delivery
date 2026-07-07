@@ -216,7 +216,7 @@ class _CombinedSendersLiveMapPageState
             children: [
               TileLayer(
                 urlTemplate:
-                    'https://tile.thunderforest.com/atlas/{z}/{x}/{y}.png?apikey=6949d257c8de4157a028c7a44b05af3d',
+                    'https://tile.thunderforest.com/atlas/{z}/{x}/{y}.png?apikey=${const String.fromEnvironment('THUNDERFOREST_API_KEY')}',
                 userAgentPackageName: 'com.example.mobile_delivery',
               ),
               MarkerLayer(

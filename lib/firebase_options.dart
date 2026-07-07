@@ -53,10 +53,10 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyAilnSQqhzU6F4f3BiZX82hxmr1v_KBs90',
-    appId: '1:607103635856:android:e590094e865309bbe6e315',
-    messagingSenderId: '607103635856',
-    projectId: 'mobile-delivery-42d6c',
-    storageBucket: 'mobile-delivery-42d6c.firebasestorage.app',
+    apiKey: const String.fromEnvironment('FIREBASE_API_KEY'),
+    appId: const String.fromEnvironment('FIREBASE_APP_ID'),
+    messagingSenderId: const String.fromEnvironment('FIREBASE_MESSAGING_SENDER_ID'),
+    projectId: const String.fromEnvironment('FIREBASE_PROJECT_ID'),
+    storageBucket: const String.fromEnvironment('FIREBASE_STORAGE_BUCKET'),
   );
 }

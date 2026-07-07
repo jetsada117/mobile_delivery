@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
-import 'package:get/get_core/src/get_main.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:mobile_delivery/pages/rider_pages/rider_home.dart';
@@ -86,132 +85,138 @@ class _RiderDeliveryStatusPageState extends State<RiderDeliveryStatusPage> {
         receiverPos ??
         const LatLng(16.2458, 103.25);
 
-    return Scaffold(
-      backgroundColor: bg,
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        title: const Text(
-          'สถานะการส่ง',
-          style: TextStyle(fontWeight: FontWeight.w800),
+    return WillPopScope(
+      onWillPop: () async => false, // false = ไม่อนุญาตให้ย้อนกลับ
+      child: Scaffold(
+        backgroundColor: bg,
+        appBar: AppBar(
+          automaticallyImplyLeading: false,
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          title: const Text(
+            'สถานะการส่ง',
+            style: TextStyle(fontWeight: FontWeight.w800),
+          ),
         ),
-      ),
-      body: Stack(
-        children: [
-          FlutterMap(
-            mapController: _mapController,
-            options: MapOptions(
-              initialCenter: initialCenter,
-              initialZoom: 14.5,
-            ),
-            children: [
-              TileLayer(
-                urlTemplate:
-                    'https://tile.thunderforest.com/atlas/{z}/{x}/{y}.png?apikey=6949d257c8de4157a028c7a44b05af3d',
-                userAgentPackageName: 'com.example.mobile_delivery',
+        body: Stack(
+          children: [
+            FlutterMap(
+              mapController: _mapController,
+              options: MapOptions(
+                initialCenter: initialCenter,
+                initialZoom: 14.5,
               ),
-              MarkerLayer(markers: _buildMarkers(providerRiderPos)),
-            ],
-          ),
-          SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 8,
+              children: [
+                TileLayer(
+                  urlTemplate:
+                      'https://tile.thunderforest.com/atlas/{z}/{x}/{y}.png?apikey=${const String.fromEnvironment('THUNDERFOREST_API_KEY')}',
+                  userAgentPackageName: 'com.example.mobile_delivery',
                 ),
-                decoration: BoxDecoration(
-                  color: cardBg,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: borderCol),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    _StatusPill(
-                      icon: Icons.location_on_outlined,
-                      iconColor: currentStatus == 2
-                          ? Colors.yellow
-                          : Colors.grey[800]!,
-                    ),
-                    _StatusPill(
-                      icon: Icons.check_circle_outline,
-                      iconColor: currentStatus == 3
-                          ? Colors.yellow
-                          : Colors.grey[800]!,
-                    ),
-                    _StatusPill(
-                      icon: Icons.local_shipping_outlined,
-                      iconColor: currentStatus == 4
-                          ? Colors.yellow
-                          : Colors.grey[800]!,
-                    ),
-                  ],
+                MarkerLayer(markers: _buildMarkers(providerRiderPos)),
+              ],
+            ),
+            SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: cardBg,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: borderCol),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      _StatusPill(
+                        icon: Icons.location_on_outlined,
+                        iconColor: currentStatus == 2
+                            ? Colors.yellow
+                            : Colors.grey[800]!,
+                      ),
+                      _StatusPill(
+                        icon: Icons.check_circle_outline,
+                        iconColor: currentStatus == 3
+                            ? Colors.yellow
+                            : Colors.grey[800]!,
+                      ),
+                      _StatusPill(
+                        icon: Icons.local_shipping_outlined,
+                        iconColor: currentStatus == 4
+                            ? Colors.yellow
+                            : Colors.grey[800]!,
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
-          ),
-          Positioned(
-            right: 24,
-            bottom: 140,
-            child: _CameraButton(
-              onTap: () => _openProofPopup(context, 'อัปโหลดภาพ'),
-            ),
-          ),
-
-          if (currentStatus == 4)
             Positioned(
-              left: 20,
-              right: 20,
-              bottom: 80,
-              child: SizedBox(
-                height: 48,
-                child: ElevatedButton.icon(
-                  icon: const Icon(Icons.flag_circle_outlined),
-                  label: const Text(
-                    'จบออเดอร์',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.yellow[700],
-                    foregroundColor: Colors.black,
-                    elevation: 2,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  onPressed: () async {
-                    try {
-                      final orderRef = FirebaseFirestore.instance
-                          .collection('orders')
-                          .doc(widget.orderId);
-
-                      await orderRef.update({
-                        'is_active': false,
-                        'current_status': 4,
-                        'updated_at': FieldValue.serverTimestamp(),
-                      });
-
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('ออเดอร์เสร็จสิ้นแล้ว ✅'),
-                          ),
-                        );
-                        Get.to(() => RiderHomePage());
-                      }
-                    } catch (e) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('เกิดข้อผิดพลาด: $e')),
-                      );
-                    }
-                  },
-                ),
+              right: 24,
+              bottom: 140,
+              child: _CameraButton(
+                onTap: () => _openProofPopup(context, 'อัปโหลดภาพ'),
               ),
             ),
-        ],
+
+            if (currentStatus == 4)
+              Positioned(
+                left: 20,
+                right: 20,
+                bottom: 80,
+                child: SizedBox(
+                  height: 48,
+                  child: ElevatedButton.icon(
+                    icon: const Icon(Icons.flag_circle_outlined),
+                    label: const Text(
+                      'จบออเดอร์',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.yellow[700],
+                      foregroundColor: Colors.black,
+                      elevation: 2,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    onPressed: () async {
+                      try {
+                        final orderRef = FirebaseFirestore.instance
+                            .collection('orders')
+                            .doc(widget.orderId);
+
+                        await orderRef.update({
+                          'is_active': false,
+                          'current_status': 4,
+                          'updated_at': FieldValue.serverTimestamp(),
+                        });
+
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('ออเดอร์เสร็จสิ้นแล้ว ✅'),
+                            ),
+                          );
+                          Get.to(() => RiderHomePage());
+                        }
+                      } catch (e) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('เกิดข้อผิดพลาด: $e')),
+                        );
+                      }
+                    },
+                  ),
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
